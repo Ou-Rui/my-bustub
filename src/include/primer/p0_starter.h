@@ -35,7 +35,11 @@ class Matrix {
    * @param cols The number of columns
    *
    */
-  Matrix(int rows, int cols) {}
+  Matrix(int rows, int cols) {
+    rows_ = rows;
+    cols_ = cols;
+    linear_ = new T[rows * cols];
+  }
 
   /** The number of rows in the matrix */
   int rows_;
@@ -95,7 +99,9 @@ class Matrix {
    * Destroy a matrix instance.
    * TODO(P0): Add implementation
    */
-  virtual ~Matrix() = default;
+  virtual ~Matrix() {
+    delete[] linear_;
+  }
 };
 
 /**
@@ -112,19 +118,24 @@ class RowMatrix : public Matrix<T> {
    * @param rows The number of rows
    * @param cols The number of columns
    */
-  RowMatrix(int rows, int cols) : Matrix<T>(rows, cols) {}
+  RowMatrix(int rows, int cols) : Matrix<T>(rows, cols) {
+    data_ = new T*[cols];
+    for (int i = 0; i < rows; ++i) {
+      data_[i] = Matrix<T>::linear_ + Matrix<T>::cols_ * i;
+    }
+  }
 
   /**
    * TODO(P0): Add implementation
    * @return The number of rows in the matrix
    */
-  auto GetRowCount() const -> int override { return 0; }
+  auto GetRowCount() const -> int override { return Matrix<T>::rows_; }
 
   /**
    * TODO(P0): Add implementation
    * @return The number of columns in the matrix
    */
-  auto GetColumnCount() const -> int override { return 0; }
+  auto GetColumnCount() const -> int override { return Matrix<T>::cols_; }
 
   /**
    * TODO(P0): Add implementation
@@ -139,7 +150,10 @@ class RowMatrix : public Matrix<T> {
    * @throws OUT_OF_RANGE if either index is out of range
    */
   auto GetElement(int i, int j) const -> T override {
-    throw NotImplementedException{"RowMatrix::GetElement() not implemented."};
+    if (i < 0 || i >= Matrix<T>::rows_ ||
+        j < 0 || j >= Matrix<T>::cols_)
+      throw Exception(ExceptionType::OUT_OF_RANGE, "GetElement: index OOR");
+    return data_[i][j];
   }
 
   /**
@@ -166,7 +180,11 @@ class RowMatrix : public Matrix<T> {
    * @throws OUT_OF_RANGE if `source` is incorrect size
    */
   void FillFrom(const std::vector<T> &source) override {
-    throw NotImplementedException{"RowMatrix::FillFrom() not implemented."};
+    if ((int)source.size() != Matrix<T>::rows_ * Matrix<T>::cols_)
+      throw Exception(ExceptionType::OUT_OF_RANGE, "FillFrom: vector.size() OOR");
+    for (int i = 0; i < (int)source.size(); ++i) {
+      Matrix<T>::linear_[i] = source[i];
+    }
   }
 
   /**
@@ -174,7 +192,9 @@ class RowMatrix : public Matrix<T> {
    *
    * Destroy a RowMatrix instance.
    */
-  ~RowMatrix() override = default;
+  ~RowMatrix() override {
+    delete[] data_;
+  };
 
  private:
   /**
