@@ -37,7 +37,7 @@ class Matrix {
    */
   Matrix(int rows, int cols) : rows_(rows), cols_(cols) {
     linear_ = new T[rows * cols];
-    memset(linear_, 0, sizeof(T) * rows * cols);
+//    memset(linear_, 0, sizeof(T) * rows * cols);
   }
 
   /** The number of rows in the matrix */
@@ -116,7 +116,7 @@ class RowMatrix : public Matrix<T> {
    * @param cols The number of columns
    */
   RowMatrix(int rows, int cols) : Matrix<T>(rows, cols) {
-    data_ = new T *[cols];
+    data_ = new T *[rows];
     for (int i = 0; i < rows; ++i) {
       data_[i] = Matrix<T>::linear_ + cols * i;
     }
@@ -184,11 +184,12 @@ class RowMatrix : public Matrix<T> {
    * @throws OUT_OF_RANGE if `source` is incorrect size
    */
   void FillFrom(const std::vector<T> &source) override {
-    if (static_cast<int>(source.size()) != Matrix<T>::rows_ * Matrix<T>::cols_) {
+    int size = static_cast<int>(source.size());
+    if (size != Matrix<T>::rows_ * Matrix<T>::cols_) {
       throw Exception(ExceptionType::OUT_OF_RANGE, "FillFrom: vector.size() OOR");
     }
 
-    for (int i = 0; i < static_cast<int>(source.size()); ++i) {
+    for (int i = 0; i < size; ++i) {
       Matrix<T>::linear_[i] = source[i];
     }
   }
@@ -234,10 +235,13 @@ class RowMatrixOperations {
 
     int row = matrixA->GetRowCount();
     int col = matrixA->GetColumnCount();
-    auto res = std::make_unique<RowMatrix<T>>(row, col);
+//    auto res = std::make_unique<RowMatrix<T>>(row, col);
+    auto res = std::unique_ptr<RowMatrix<T>>(new RowMatrix<T>(row, col));
+    T sum;
     for (int i = 0; i < row; ++i) {
       for (int j = 0; j < col; ++j) {
-        res->SetElement(i, j, matrixA->GetElement(i, j) + matrixB->GetElement(i, j));
+        sum = matrixA->GetElement(i, j) + matrixB->GetElement(i, j);
+        res->SetElement(i, j, sum);
       }
     }
     return res;
@@ -262,10 +266,12 @@ class RowMatrixOperations {
 
     int row_res = row_a;
     int col_res = col_b;
-    auto res = std::make_unique<RowMatrix<T>>(row_res, col_res);
+//    auto res = std::make_unique<RowMatrix<T>>(row_res, col_res);
+    T tmp;
+    auto res = std::unique_ptr<RowMatrix<T>>(new RowMatrix<T>(row_res, col_res));
     for (int i = 0; i < row_res; ++i) {
       for (int j = 0; j < col_res; ++j) {
-        int tmp = 0;
+        tmp = 0;
         for (int k = 0; k < col_a; ++k) {
           tmp += matrixA->GetElement(i, k) * matrixB->GetElement(k, j);
         }
@@ -288,10 +294,8 @@ class RowMatrixOperations {
     // TODO(P0): Add implementation
     auto tmp = Multiply(matrixA, matrixB);
     if (tmp != nullptr) {
-      tmp = Add(tmp.get(), matrixC);
-      return tmp;
+      return Add(tmp.get(), matrixC);
     }
-    tmp.reset();
     return std::unique_ptr<RowMatrix<T>>(nullptr);
   }
 };
