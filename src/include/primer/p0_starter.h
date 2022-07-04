@@ -35,7 +35,10 @@ class Matrix {
    * @param cols The number of columns
    *
    */
-  Matrix(int rows, int cols) : rows_(rows), cols_(cols) { linear_ = new T[rows * cols]; }
+  Matrix(int rows, int cols) : rows_(rows), cols_(cols) {
+    linear_ = new T[rows * cols];
+    memset(linear_, 0, sizeof(T) * rows * cols);
+  }
 
   /** The number of rows in the matrix */
   int rows_;
@@ -115,7 +118,7 @@ class RowMatrix : public Matrix<T> {
   RowMatrix(int rows, int cols) : Matrix<T>(rows, cols) {
     data_ = new T *[cols];
     for (int i = 0; i < rows; ++i) {
-      data_[i] = Matrix<T>::linear_ + Matrix<T>::cols_ * i;
+      data_[i] = Matrix<T>::linear_ + cols * i;
     }
   }
 
@@ -285,8 +288,10 @@ class RowMatrixOperations {
     // TODO(P0): Add implementation
     auto tmp = Multiply(matrixA, matrixB);
     if (tmp != nullptr) {
-      return Add(tmp.get(), matrixC);
+      tmp = Add(tmp.get(), matrixC);
+      return tmp;
     }
+    tmp.reset();
     return std::unique_ptr<RowMatrix<T>>(nullptr);
   }
 };

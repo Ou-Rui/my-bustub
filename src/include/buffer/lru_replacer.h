@@ -12,8 +12,12 @@
 
 #pragma once
 
+#include <functional>
 #include <list>
 #include <mutex>  // NOLINT
+#include <queue>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "buffer/replacer.h"
@@ -47,6 +51,18 @@ class LRUReplacer : public Replacer {
 
  private:
   // TODO(student): implement me!
+  std::mutex latch_;
+  // pair = (timestamp, frame_id),
+  std::priority_queue<std::pair<int, int>, std::vector<std::pair<int, int>>, std::greater<>> q_;
+  // key: frame_id, value: timestamp
+  // number of frames in LRUReplacer = m_.size()
+  std::unordered_map<int, int> m_;
+  // timestamp counter
+  int ts_cnt_;
+
+  size_t sz_;
+
+  size_t max_size_;
 };
 
 }  // namespace bustub
