@@ -1,6 +1,8 @@
 # Project1: Buffer Pool
 ## 22.7.6
 - Task1改为双向链表+哈希表的数据结构
+- Task2通过本地测试
+
 ## 22.7.4
 - Task1完成，感觉不一定没有bug
 - Task1 GradeScope通过
