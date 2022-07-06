@@ -18,101 +18,66 @@ namespace bustub {
 
 LRUReplacer::LRUReplacer(size_t num_pages) {
   //  LOG_INFO("[LRU] LRUReplacer: Init max_size = %lu", num_pages);
-  ts_cnt_ = 1;
-  m_.clear();
-  sz_ = 0;
-  //  q_.clear();
   max_size_ = num_pages;
 }
 
 LRUReplacer::~LRUReplacer() = default;
 
 auto LRUReplacer::Victim(frame_id_t *frame_id) -> bool {
-  latch_.lock();
-  //  LOG_INFO("[LRU] Victim: map_size = %lu", sz_);
-  if (sz_ == 0) {
-    latch_.unlock();
+  std::scoped_lock latch{latch_};
+  //  LOG_INFO("[LRU] Victim: list_size = %lu", l_.size());
+  if (l_.empty()) {
     return false;
   }
-
-  bool success_flag = false;
-  while (!q_.empty()) {
-    std::pair<int, int> item = q_.top();
-    q_.pop();
-    int timestamp = item.first;
-    int f_id = item.second;
-    if (m_[f_id] == timestamp) {
-      success_flag = true;
-      m_.erase(f_id);
-      sz_--;
-      //      LOG_INFO("[LRU] Victim: found f_id = %d, ts = %d, sz = %lu", f_id, timestamp, sz_);
-
-      if (frame_id == nullptr) {
-        //        LOG_WARN("[LRU] Victim: frame_id is null??");
-        latch_.unlock();
-        return false;
-      }
-      *frame_id = f_id;
-      break;
-    }
-  }
-
-  if (!success_flag) {
-    //    LOG_WARN("[LRU] Victim: queue has nothing valid..");
-    latch_.unlock();
-    return false;
-  }
-
-  latch_.unlock();
+  *frame_id = l_.back();
+  l_.pop_back();
+  m_.erase(*frame_id);
+  //  LOG_INFO("[LRU] Victim: pop frame_id = %d", *frame_id);
+  Print();
   return true;
 }
 
 void LRUReplacer::Pin(frame_id_t frame_id) {
-  latch_.lock();
+  std::scoped_lock latch{latch_};
   //  LOG_INFO("[LRU] Pin: remove frame %d", frame_id);
-  if (m_[frame_id] == 0) {
+  if (m_.find(frame_id) == m_.end()) {
     //    LOG_INFO("[LRU] Pin: No frame %d in LRU.. return", frame_id);
-    latch_.unlock();
     return;
   }
+  l_.erase(m_[frame_id]);
   m_.erase(frame_id);
-  sz_--;
-  latch_.unlock();
+  Print();
 }
 
 void LRUReplacer::Unpin(frame_id_t frame_id) {
-  latch_.lock();
-  //  LOG_INFO("[LRU] Unpin: add frame %d, ts = %d", frame_id, ts_cnt_);
-
-  if (m_[frame_id] != 0) {
+  std::scoped_lock latch{latch_};
+  //  LOG_INFO("[LRU] Unpin: add frame %d", frame_id);
+  if (m_.find(frame_id) != m_.end()) {
     //    LOG_INFO("[LRU] Unpin: frame already in LRU.. return");
-    latch_.unlock();
     return;
   }
 
-  while (sz_ >= max_size_) {
-    //    LOG_INFO("[LRU] Unpin: LRU is full.. Call Victim");
-    frame_id_t *frame_id = new frame_id_t;
-    latch_.unlock();
-    if (!Victim(frame_id)) {
-      //      LOG_INFO("[LRU] Unpin: Victim Fail...");
-    }
-    delete frame_id;
-    latch_.lock();
+  while (l_.size() >= max_size_) {
+    //    LOG_INFO("[LRU] Unpin: LRU is full..");
+    return;
   }
-  m_[frame_id] = ts_cnt_;
-  sz_++;
-  q_.push(std::make_pair(ts_cnt_, frame_id));
-  ts_cnt_++;
-  latch_.unlock();
+  l_.push_front(frame_id);
+  m_[frame_id] = l_.begin();
+  Print();
 }
 
 auto LRUReplacer::Size() -> size_t {
-  latch_.lock();
-  //  LOG_INFO("[LRU] Size: size = %lu", sz_);
-  int size = sz_;
-  latch_.unlock();
-  return size;
+  std::scoped_lock latch{latch_};
+  //  LOG_INFO("[LRU] Size: size = %lu", l_.size());
+  return l_.size();
+}
+
+void LRUReplacer::Print() {
+  //  std::cout << "l = { ";
+  //  for (int x : l_) {
+  //    std::cout << x << ", ";
+  //  }
+  //  std::cout << "};\n";
 }
 
 }  // namespace bustub

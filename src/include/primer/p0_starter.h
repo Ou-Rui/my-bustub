@@ -37,7 +37,7 @@ class Matrix {
    */
   Matrix(int rows, int cols) : rows_(rows), cols_(cols) {
     linear_ = new T[rows * cols];
-//    memset(linear_, 0, sizeof(T) * rows * cols);
+    //    memset(linear_, 0, sizeof(T) * rows * cols);
   }
 
   /** The number of rows in the matrix */
@@ -235,7 +235,7 @@ class RowMatrixOperations {
 
     int row = matrixA->GetRowCount();
     int col = matrixA->GetColumnCount();
-//    auto res = std::make_unique<RowMatrix<T>>(row, col);
+    //    auto res = std::make_unique<RowMatrix<T>>(row, col);
     auto res = std::unique_ptr<RowMatrix<T>>(new RowMatrix<T>(row, col));
     T sum;
     for (int i = 0; i < row; ++i) {
@@ -266,7 +266,7 @@ class RowMatrixOperations {
 
     int row_res = row_a;
     int col_res = col_b;
-//    auto res = std::make_unique<RowMatrix<T>>(row_res, col_res);
+    //    auto res = std::make_unique<RowMatrix<T>>(row_res, col_res);
     T tmp;
     auto res = std::unique_ptr<RowMatrix<T>>(new RowMatrix<T>(row_res, col_res));
     for (int i = 0; i < row_res; ++i) {

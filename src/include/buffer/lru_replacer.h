@@ -52,17 +52,14 @@ class LRUReplacer : public Replacer {
  private:
   // TODO(student): implement me!
   std::mutex latch_;
-  // pair = (timestamp, frame_id),
-  std::priority_queue<std::pair<int, int>, std::vector<std::pair<int, int>>, std::greater<>> q_;
-  // key: frame_id, value: timestamp
-  // number of frames in LRUReplacer = m_.size()
-  std::unordered_map<int, int> m_;
-  // timestamp counter
-  int ts_cnt_;
-
-  size_t sz_;
+  // dual-linked-list
+  std::list<frame_id_t> l_;
+  // key: frame_id, value: position in the list
+  std::unordered_map<frame_id_t, std::list<frame_id_t>::iterator> m_;
 
   size_t max_size_;
+
+  void Print();
 };
 
 }  // namespace bustub
