@@ -26,7 +26,7 @@ namespace bustub {
 
 #define BufferPoolManager MockBufferPoolManager
 
-TEST(BufferPoolManagerConcurrencyTest, ConcurrencyTest) {
+TEST(BufferPoolManagerConcurrencyTest, DISABLED_ConcurrencyTest) {
   const int num_threads = 5;
   const int num_runs = 50;
   for (int run = 0; run < num_runs; run++) {
@@ -71,7 +71,7 @@ TEST(BufferPoolManagerConcurrencyTest, ConcurrencyTest) {
   }
 }
 
-TEST(BufferPoolManagerConcurrencyTest, HardTest_1) {
+TEST(BufferPoolManagerConcurrencyTest, DISABLED_HardTest1) {
   page_id_t temp_page_id;
   DiskManager *disk_manager = new DiskManager("test.db");
   auto bpm = new BufferPoolManager(10, disk_manager);
@@ -135,7 +135,7 @@ TEST(BufferPoolManagerConcurrencyTest, HardTest_1) {
   delete disk_manager;
 }
 
-TEST(BufferPoolManagerConcurrencyTest, HardTest_2) {
+TEST(BufferPoolManagerConcurrencyTest, DISABLED_HardTest2) {
   const int num_threads = 5;
   const int num_runs = 50;
   for (int run = 0; run < num_runs; run++) {
@@ -226,7 +226,7 @@ TEST(BufferPoolManagerConcurrencyTest, HardTest_2) {
   }
 }
 
-TEST(BufferPoolManagerConcurrencyTest, HardTest_3) {
+TEST(BufferPoolManagerConcurrencyTest, DISABLED_HardTest3) {
   const int num_threads = 5;
   const int num_runs = 50;
   for (int run = 0; run < num_runs; run++) {
@@ -341,7 +341,7 @@ TEST(BufferPoolManagerConcurrencyTest, HardTest_3) {
   }
 }
 
-TEST(BufferPoolManagerConcurrencyTest, HardTest_4) {
+TEST(BufferPoolManagerConcurrencyTest, HardTest4) {
   const int num_threads = 5;
   const int num_runs = 50;
   for (int run = 0; run < num_runs; run++) {

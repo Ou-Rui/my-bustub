@@ -1,4 +1,10 @@
 # Project1: Buffer Pool
+## 22.7.7
+- 移植了2021的代码到2020版本，修了几个bug，通过远端测试
+  - NewPage时要先写入磁盘
+  - Flush时不应该仅Flush Dirty Page
+  - 提交网站时应关闭LOGGING
+
 ## 22.7.6
 - Task1改为双向链表+哈希表的数据结构
 - Task2通过GradeScope测试
