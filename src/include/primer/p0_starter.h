@@ -14,6 +14,7 @@
 
 #include <memory>
 #include <stdexcept>
+#include <utility>
 
 namespace bustub {
 
@@ -49,7 +50,7 @@ class Matrix {
   // Sets the matrix elements based on the array arr
   virtual void MatImport(T *arr) = 0;
 
-  virtual ~Matrix() { delete[] linear_; };
+  virtual ~Matrix() { delete[] linear_; }
 };
 
 template <typename T>
@@ -136,7 +137,7 @@ class RowMatrixOperations {
     int col_res = col_b;
     auto res = std::make_unique<RowMatrix<T>>(row_res, col_res);
     T tmp;
-//    auto res = std::unique_ptr<RowMatrix<T>>(new RowMatrix<T>(row_res, col_res));
+    //    auto res = std::unique_ptr<RowMatrix<T>>(new RowMatrix<T>(row_res, col_res));
     for (int i = 0; i < row_res; ++i) {
       for (int j = 0; j < col_res; ++j) {
         tmp = 0;
@@ -154,9 +155,9 @@ class RowMatrixOperations {
   static std::unique_ptr<RowMatrix<T>> GemmMatrices(std::unique_ptr<RowMatrix<T>> matA,
                                                     std::unique_ptr<RowMatrix<T>> matB,
                                                     std::unique_ptr<RowMatrix<T>> matC) {
-    auto tmp = MultiplyMatrices(move(matA), move(matB));
+    auto tmp = MultiplyMatrices(std::move(matA), std::move(matB));
     if (tmp != nullptr) {
-      return AddMatrices(tmp.get(), move(matC));
+      return AddMatrices(std::move(tmp), std::move(matC));
     }
     return std::unique_ptr<RowMatrix<T>>(nullptr);
   }
