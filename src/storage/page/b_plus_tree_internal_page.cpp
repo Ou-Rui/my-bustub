@@ -13,6 +13,7 @@
 #include <sstream>
 
 #include "common/exception.h"
+#include "common/logger.h"
 #include "storage/page/b_plus_tree_internal_page.h"
 
 namespace bustub {
@@ -25,7 +26,13 @@ namespace bustub {
  * max page size
  */
 INDEX_TEMPLATE_ARGUMENTS
-void B_PLUS_TREE_INTERNAL_PAGE_TYPE::Init(page_id_t page_id, page_id_t parent_id, int max_size) {}
+void B_PLUS_TREE_INTERNAL_PAGE_TYPE::Init(page_id_t page_id, page_id_t parent_id, int max_size) {
+  SetPageType(IndexPageType::INTERNAL_PAGE);
+  SetPageId(page_id);
+  SetParentPageId(parent_id);
+  SetMaxSize(max_size);
+  SetSize(0);
+}
 /*
  * Helper method to get/set the key associated with input "index"(a.k.a
  * array offset)
@@ -33,26 +40,50 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::Init(page_id_t page_id, page_id_t parent_id
 INDEX_TEMPLATE_ARGUMENTS
 KeyType B_PLUS_TREE_INTERNAL_PAGE_TYPE::KeyAt(int index) const {
   // replace with your own code
-  KeyType key{};
-  return key;
+  if (index < 0 || index >= GetSize()) {
+    throw Exception(ExceptionType::OUT_OF_RANGE, "KeyAt() index OOR");
+  }
+  return array[index].first;
 }
 
 INDEX_TEMPLATE_ARGUMENTS
-void B_PLUS_TREE_INTERNAL_PAGE_TYPE::SetKeyAt(int index, const KeyType &key) {}
+void B_PLUS_TREE_INTERNAL_PAGE_TYPE::SetKeyAt(int index, const KeyType &key) {
+  // TODO: Re-Sorting?
+  if (index < 0 || index >= GetSize()) {
+    throw Exception(ExceptionType::OUT_OF_RANGE, "SetKeyAt() index OOR");
+  }
+  array[index].first = key;
+}
 
 /*
  * Helper method to find and return array index(or offset), so that its value
  * equals to input "value"
  */
 INDEX_TEMPLATE_ARGUMENTS
-int B_PLUS_TREE_INTERNAL_PAGE_TYPE::ValueIndex(const ValueType &value) const { return 0; }
+int B_PLUS_TREE_INTERNAL_PAGE_TYPE::ValueIndex(const ValueType &value) const {
+  // linear search
+  int index = -1;
+  for (int i = 0; i < GetSize(); i++) {
+    auto item = array[i];
+    if (item.second == value) {
+      index = i;
+      break;
+    }
+  }
+  return index;
+}
 
 /*
  * Helper method to get the value associated with input "index"(a.k.a array
  * offset)
  */
 INDEX_TEMPLATE_ARGUMENTS
-ValueType B_PLUS_TREE_INTERNAL_PAGE_TYPE::ValueAt(int index) const { return 0; }
+ValueType B_PLUS_TREE_INTERNAL_PAGE_TYPE::ValueAt(int index) const {
+  if (index < 0 || index >= GetSize()) {
+    throw Exception(ExceptionType::OUT_OF_RANGE, "ValueAt() index OOR");
+  }
+  return array[index].second;
+}
 
 /*****************************************************************************
  * LOOKUP
@@ -64,7 +95,24 @@ ValueType B_PLUS_TREE_INTERNAL_PAGE_TYPE::ValueAt(int index) const { return 0; }
  */
 INDEX_TEMPLATE_ARGUMENTS
 ValueType B_PLUS_TREE_INTERNAL_PAGE_TYPE::Lookup(const KeyType &key, const KeyComparator &comparator) const {
-  return INVALID_PAGE_ID;
+//  int l = 1;
+//  int r = GetSize() - 1;
+//  while (l < r) {
+//    int m = ((r - l) >> 1) + l;
+//    if (comparator(key, array[m].first) < 0) {
+//      r = m;
+//    } else {
+//      l = m + 1;
+//    }
+//  }
+  // TODO: Binary Search
+  int size = GetSize();
+  for (int i = 1; i < size; ++i) {
+    if (comparator(key, array[i].first) < 0) {
+      return array[i-1].second;
+    }
+  }
+  return array[size-1].second;
 }
 
 /*****************************************************************************
@@ -78,7 +126,12 @@ ValueType B_PLUS_TREE_INTERNAL_PAGE_TYPE::Lookup(const KeyType &key, const KeyCo
  */
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_INTERNAL_PAGE_TYPE::PopulateNewRoot(const ValueType &old_value, const KeyType &new_key,
-                                                     const ValueType &new_value) {}
+                                                     const ValueType &new_value) {
+  // TODO: this is the new root? old_value = left_child, new_value = right_child ?
+  SetSize(2);
+  array[0] = std::make_pair(KeyType{}, old_value);
+  array[1] = std::make_pair(new_key, new_value);
+}
 /*
  * Insert new_key & new_value pair right after the pair with its value ==
  * old_value
@@ -87,7 +140,31 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::PopulateNewRoot(const ValueType &old_value,
 INDEX_TEMPLATE_ARGUMENTS
 int B_PLUS_TREE_INTERNAL_PAGE_TYPE::InsertNodeAfter(const ValueType &old_value, const KeyType &new_key,
                                                     const ValueType &new_value) {
-  return 0;
+  LOG_INFO("old_val = %d, new_key = %lu, new_value = %d", old_value, new_key.ToString(), new_value);
+  int size = GetSize();
+  int index = 0;
+  bool found = false;
+  for (; index < size; ++index) {
+    auto item = array[index];
+    if (item.second == old_value) {
+      found = true;
+      break;
+    }
+  }
+
+  // no value == old_value
+  if (!found) {
+    LOG_INFO("not found.. val = %d", old_value);
+    return size;
+  }
+
+  for (int i = size - 1; i > index; i--) {
+    array[i+1] = array[i];
+  }
+  array[index+1] = std::make_pair(new_key, new_value);
+  SetSize(size+1);
+  LOG_INFO("found.. val = %d, index = %d, new_size = %d", old_value, index, GetSize());
+  return GetSize();
 }
 
 /*****************************************************************************
@@ -98,7 +175,10 @@ int B_PLUS_TREE_INTERNAL_PAGE_TYPE::InsertNodeAfter(const ValueType &old_value, 
  */
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_INTERNAL_PAGE_TYPE::MoveHalfTo(BPlusTreeInternalPage *recipient,
-                                                BufferPoolManager *buffer_pool_manager) {}
+                                                BufferPoolManager *buffer_pool_manager) {
+  // TODO: recipient is left/right child ??? current left
+
+}
 
 /* Copy entries into me, starting from {items} and copy {size} entries.
  * Since it is an internal page, for all entries (pages) moved, their parents page now changes to me.

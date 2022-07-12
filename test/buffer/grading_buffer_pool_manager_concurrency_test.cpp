@@ -26,7 +26,7 @@ namespace bustub {
 
 #define BufferPoolManager MockBufferPoolManager
 
-TEST(BufferPoolManagerConcurrencyTest, DISABLED_ConcurrencyTest) {
+TEST(BufferPoolManagerConcurrencyTest, ConcurrencyTest) {
   const int num_threads = 5;
   const int num_runs = 50;
   for (int run = 0; run < num_runs; run++) {
@@ -71,7 +71,7 @@ TEST(BufferPoolManagerConcurrencyTest, DISABLED_ConcurrencyTest) {
   }
 }
 
-TEST(BufferPoolManagerConcurrencyTest, DISABLED_HardTest1) {
+TEST(BufferPoolManagerConcurrencyTest, HardTest1) {
   page_id_t temp_page_id;
   DiskManager *disk_manager = new DiskManager("test.db");
   auto bpm = new BufferPoolManager(10, disk_manager);
@@ -135,7 +135,7 @@ TEST(BufferPoolManagerConcurrencyTest, DISABLED_HardTest1) {
   delete disk_manager;
 }
 
-TEST(BufferPoolManagerConcurrencyTest, DISABLED_HardTest2) {
+TEST(BufferPoolManagerConcurrencyTest, HardTest2) {
   const int num_threads = 5;
   const int num_runs = 50;
   for (int run = 0; run < num_runs; run++) {
@@ -226,7 +226,7 @@ TEST(BufferPoolManagerConcurrencyTest, DISABLED_HardTest2) {
   }
 }
 
-TEST(BufferPoolManagerConcurrencyTest, DISABLED_HardTest3) {
+TEST(BufferPoolManagerConcurrencyTest, HardTest3) {
   const int num_threads = 5;
   const int num_runs = 50;
   for (int run = 0; run < num_runs; run++) {
