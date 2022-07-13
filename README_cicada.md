@@ -1,4 +1,14 @@
+# Project2 B+Tree
+## 22.7.13
+- 完成Split_Test
+
+## 22.7.12
+- 一头雾水，准备先看checkpoint1 test code
+
 # Project1: Buffer Pool
+## 22.7.12
+- 批量测试脚本完成，测试500次通过
+
 ## 22.7.7
 - 移植了2021的代码到2020版本，修了几个bug，通过远端测试
   - NewPage时要先写入磁盘

@@ -13,6 +13,7 @@
 
 #include "common/exception.h"
 #include "common/rid.h"
+#include "common/logger.h"
 #include "storage/page/b_plus_tree_leaf_page.h"
 
 namespace bustub {
@@ -27,23 +28,38 @@ namespace bustub {
  * next page id and set max size
  */
 INDEX_TEMPLATE_ARGUMENTS
-void B_PLUS_TREE_LEAF_PAGE_TYPE::Init(page_id_t page_id, page_id_t parent_id, int max_size) {}
+void B_PLUS_TREE_LEAF_PAGE_TYPE::Init(page_id_t page_id, page_id_t parent_id, int max_size) {
+  SetPageType(IndexPageType::LEAF_PAGE);
+  SetPageId(page_id);
+  SetParentPageId(parent_id);
+  SetMaxSize(max_size);
+  SetSize(0);
+}
 
 /**
  * Helper methods to set/get next page id
  */
 INDEX_TEMPLATE_ARGUMENTS
-page_id_t B_PLUS_TREE_LEAF_PAGE_TYPE::GetNextPageId() const { return INVALID_PAGE_ID; }
+page_id_t B_PLUS_TREE_LEAF_PAGE_TYPE::GetNextPageId() const { return next_page_id_; }
 
 INDEX_TEMPLATE_ARGUMENTS
-void B_PLUS_TREE_LEAF_PAGE_TYPE::SetNextPageId(page_id_t next_page_id) {}
+void B_PLUS_TREE_LEAF_PAGE_TYPE::SetNextPageId(page_id_t next_page_id) { next_page_id_ = next_page_id; }
 
 /**
  * Helper method to find the first index i so that array[i].first >= key
  * NOTE: This method is only used when generating index iterator
  */
 INDEX_TEMPLATE_ARGUMENTS
-int B_PLUS_TREE_LEAF_PAGE_TYPE::KeyIndex(const KeyType &key, const KeyComparator &comparator) const { return 0; }
+int B_PLUS_TREE_LEAF_PAGE_TYPE::KeyIndex(const KeyType &key, const KeyComparator &comparator) const {
+  // TODO(cicada): Binary Search
+  int size = GetSize();
+  for (int i = 0; i < size; i++) {
+    if (comparator(key, array[i].first) == 0) {
+      return i;
+    }
+  }
+  return -1;
+}
 
 /*
  * Helper method to find and return the key associated with input "index"(a.k.a
@@ -51,9 +67,8 @@ int B_PLUS_TREE_LEAF_PAGE_TYPE::KeyIndex(const KeyType &key, const KeyComparator
  */
 INDEX_TEMPLATE_ARGUMENTS
 KeyType B_PLUS_TREE_LEAF_PAGE_TYPE::KeyAt(int index) const {
-  // replace with your own code
-  KeyType key{};
-  return key;
+  IndexRangeChecker(index);
+  return array[index].first;
 }
 
 /*
@@ -62,8 +77,8 @@ KeyType B_PLUS_TREE_LEAF_PAGE_TYPE::KeyAt(int index) const {
  */
 INDEX_TEMPLATE_ARGUMENTS
 const MappingType &B_PLUS_TREE_LEAF_PAGE_TYPE::GetItem(int index) {
-  // replace with your own code
-  return array[0];
+  IndexRangeChecker(index);
+  return array[index];
 }
 
 /*****************************************************************************
@@ -75,7 +90,31 @@ const MappingType &B_PLUS_TREE_LEAF_PAGE_TYPE::GetItem(int index) {
  */
 INDEX_TEMPLATE_ARGUMENTS
 int B_PLUS_TREE_LEAF_PAGE_TYPE::Insert(const KeyType &key, const ValueType &value, const KeyComparator &comparator) {
-  return 0;
+  LOG_INFO("key = %lu, val = %s", key.ToString(), value.ToString().c_str());
+  // TODO: Binary Search
+  int index = 0;
+  int size = GetSize();
+  for (; index < size; index++) {
+    // duplicate check
+    if (comparator(key, array[index].first) == 0) {
+      LOG_INFO("Duplicate key = %lu", key.ToString());
+      return size;
+    }
+    // key < array[index].first
+    if (comparator(key, array[index].first) < 0) {
+      break;
+    }
+  }
+  // move pairs backward
+  for (int i = size - 1; i >= index; i--) {
+    array[i+1] = array[i];
+  }
+  // insert kv pair, ++size
+  array[index] = std::make_pair(key, value);
+  SetSize(size+1);
+  LOG_INFO("insert done.. key = %lu, val = %s, index = %d, new_size = %d",
+           key.ToString(), value.ToString().c_str(), index, GetSize());
+  return GetSize();
 }
 
 /*****************************************************************************
@@ -85,13 +124,29 @@ int B_PLUS_TREE_LEAF_PAGE_TYPE::Insert(const KeyType &key, const ValueType &valu
  * Remove half of key & value pairs from this page to "recipient" page
  */
 INDEX_TEMPLATE_ARGUMENTS
-void B_PLUS_TREE_LEAF_PAGE_TYPE::MoveHalfTo(BPlusTreeLeafPage *recipient) {}
+void B_PLUS_TREE_LEAF_PAGE_TYPE::MoveHalfTo(BPlusTreeLeafPage *recipient) {
+  assert(recipient->GetSize() == 0);
+  assert(GetSize() == GetMaxSize());
+  int size = GetSize();
+
+  int mid_idx = size / 2;
+  recipient->CopyNFrom(&array[mid_idx], size - mid_idx);
+
+  SetSize(mid_idx);
+  LOG_INFO("done, my_size = %d, recipient_size = %d", GetSize(), recipient->GetSize());
+}
 
 /*
  * Copy starting from items, and copy {size} number of elements into me.
  */
 INDEX_TEMPLATE_ARGUMENTS
-void B_PLUS_TREE_LEAF_PAGE_TYPE::CopyNFrom(MappingType *items, int size) {}
+void B_PLUS_TREE_LEAF_PAGE_TYPE::CopyNFrom(MappingType *items, int size) {
+  for (int i = 0; i < size; i++) {
+    array[i] = *items;
+    items++;
+  }
+  SetSize(size);
+}
 
 /*****************************************************************************
  * LOOKUP
@@ -103,7 +158,12 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::CopyNFrom(MappingType *items, int size) {}
  */
 INDEX_TEMPLATE_ARGUMENTS
 bool B_PLUS_TREE_LEAF_PAGE_TYPE::Lookup(const KeyType &key, ValueType *value, const KeyComparator &comparator) const {
-  return false;
+  int index = KeyIndex(key, comparator);
+  if (index == -1) {
+    return false;
+  }
+  *value = array[index].second;
+  return true;
 }
 
 /*****************************************************************************

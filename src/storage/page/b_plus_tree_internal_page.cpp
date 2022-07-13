@@ -39,19 +39,14 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::Init(page_id_t page_id, page_id_t parent_id
  */
 INDEX_TEMPLATE_ARGUMENTS
 KeyType B_PLUS_TREE_INTERNAL_PAGE_TYPE::KeyAt(int index) const {
-  // replace with your own code
-  if (index < 0 || index >= GetSize()) {
-    throw Exception(ExceptionType::OUT_OF_RANGE, "KeyAt() index OOR");
-  }
+  IndexRangeChecker(index);
   return array[index].first;
 }
 
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_INTERNAL_PAGE_TYPE::SetKeyAt(int index, const KeyType &key) {
-  // TODO: Re-Sorting?
-  if (index < 0 || index >= GetSize()) {
-    throw Exception(ExceptionType::OUT_OF_RANGE, "SetKeyAt() index OOR");
-  }
+  // TODO(cicada): Re-Sorting?
+  IndexRangeChecker(index);
   array[index].first = key;
 }
 
@@ -79,9 +74,7 @@ int B_PLUS_TREE_INTERNAL_PAGE_TYPE::ValueIndex(const ValueType &value) const {
  */
 INDEX_TEMPLATE_ARGUMENTS
 ValueType B_PLUS_TREE_INTERNAL_PAGE_TYPE::ValueAt(int index) const {
-  if (index < 0 || index >= GetSize()) {
-    throw Exception(ExceptionType::OUT_OF_RANGE, "ValueAt() index OOR");
-  }
+  IndexRangeChecker(index);
   return array[index].second;
 }
 
@@ -105,7 +98,7 @@ ValueType B_PLUS_TREE_INTERNAL_PAGE_TYPE::Lookup(const KeyType &key, const KeyCo
 //      l = m + 1;
 //    }
 //  }
-  // TODO: Binary Search
+  // TODO(cicada): Binary Search
   int size = GetSize();
   for (int i = 1; i < size; ++i) {
     if (comparator(key, array[i].first) < 0) {
@@ -123,17 +116,17 @@ ValueType B_PLUS_TREE_INTERNAL_PAGE_TYPE::Lookup(const KeyType &key, const KeyCo
  * When the insertion cause overflow from leaf page all the way upto the root
  * page, you should create a new root page and populate its elements.
  * NOTE: This method is only called within InsertIntoParent()(b_plus_tree.cpp)
+ * cicada: This is the created new root
  */
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_INTERNAL_PAGE_TYPE::PopulateNewRoot(const ValueType &old_value, const KeyType &new_key,
                                                      const ValueType &new_value) {
-  // TODO: this is the new root? old_value = left_child, new_value = right_child ?
   SetSize(2);
   array[0] = std::make_pair(KeyType{}, old_value);
   array[1] = std::make_pair(new_key, new_value);
 }
 /*
- * Insert new_key & new_value pair right after the pair with its value ==
+ * Insert new_key & new_value pair right "after" the pair with its value ==
  * old_value
  * @return:  new size after insertion
  */
@@ -144,6 +137,7 @@ int B_PLUS_TREE_INTERNAL_PAGE_TYPE::InsertNodeAfter(const ValueType &old_value, 
   int size = GetSize();
   int index = 0;
   bool found = false;
+  // linear search for old_value
   for (; index < size; ++index) {
     auto item = array[index];
     if (item.second == old_value) {
@@ -151,16 +145,16 @@ int B_PLUS_TREE_INTERNAL_PAGE_TYPE::InsertNodeAfter(const ValueType &old_value, 
       break;
     }
   }
-
   // no value == old_value
   if (!found) {
     LOG_INFO("not found.. val = %d", old_value);
     return size;
   }
-
+  // move the pairs backward
   for (int i = size - 1; i > index; i--) {
     array[i+1] = array[i];
   }
+  // insert the new pair
   array[index+1] = std::make_pair(new_key, new_value);
   SetSize(size+1);
   LOG_INFO("found.. val = %d, index = %d, new_size = %d", old_value, index, GetSize());
@@ -176,16 +170,34 @@ int B_PLUS_TREE_INTERNAL_PAGE_TYPE::InsertNodeAfter(const ValueType &old_value, 
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_INTERNAL_PAGE_TYPE::MoveHalfTo(BPlusTreeInternalPage *recipient,
                                                 BufferPoolManager *buffer_pool_manager) {
-  // TODO: recipient is left/right child ??? current left
-
+  assert(recipient->GetSize() == 0);
+  assert(GetSize() == GetMaxSize() + 1);
+  int size = GetSize();
+  int mid_idx = size / 2;
+  recipient->CopyNFrom(&array[mid_idx], size - mid_idx, buffer_pool_manager);
+  SetSize(mid_idx);
+  LOG_INFO("done, my_size = %d, recipient_size = %d", GetSize(), recipient->GetSize());
 }
 
 /* Copy entries into me, starting from {items} and copy {size} entries.
- * Since it is an internal page, for all entries (pages) moved, their parents page now changes to me.
+ * Since it is an internal page, for all entries (pages) moved, their parent page now changes to me.
  * So I need to 'adopt' them by changing their parent page id, which needs to be persisted with BufferPoolManger
  */
 INDEX_TEMPLATE_ARGUMENTS
-void B_PLUS_TREE_INTERNAL_PAGE_TYPE::CopyNFrom(MappingType *items, int size, BufferPoolManager *buffer_pool_manager) {}
+void B_PLUS_TREE_INTERNAL_PAGE_TYPE::CopyNFrom(MappingType *items, int size, BufferPoolManager *buffer_pool_manager) {
+  for (int i = 0; i < size; i++) {
+    array[i] = *items;
+    page_id_t page_id = array[i].second;
+    auto child_page = reinterpret_cast<BPlusTreePage *> (buffer_pool_manager->FetchPage(page_id));
+    if (child_page == nullptr) {
+      throw Exception(ExceptionType::INVALID, "child_page invalid");
+    }
+    child_page->SetParentPageId(GetPageId());
+    buffer_pool_manager->UnpinPage(page_id, true);
+    items++;
+  }
+  SetSize(size);
+}
 
 /*****************************************************************************
  * REMOVE
@@ -196,7 +208,13 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::CopyNFrom(MappingType *items, int size, Buf
  * NOTE: store key&value pair continuously after deletion
  */
 INDEX_TEMPLATE_ARGUMENTS
-void B_PLUS_TREE_INTERNAL_PAGE_TYPE::Remove(int index) {}
+void B_PLUS_TREE_INTERNAL_PAGE_TYPE::Remove(int index) {
+  int size = GetSize();
+  for (int i = index; i < size - 1; i++) {
+    array[i] = array[i+1];
+  }
+  SetSize(size + 1);
+}
 
 /*
  * Remove the only key & value pair in internal page and return the value
@@ -258,7 +276,7 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::MoveLastToFrontOf(BPlusTreeInternalPage *re
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_INTERNAL_PAGE_TYPE::CopyFirstFrom(const MappingType &pair, BufferPoolManager *buffer_pool_manager) {}
 
-// valuetype for internalNode should be page id_t
+// ValueType for internalNode should be page_id_t
 template class BPlusTreeInternalPage<GenericKey<4>, page_id_t, GenericComparator<4>>;
 template class BPlusTreeInternalPage<GenericKey<8>, page_id_t, GenericComparator<8>>;
 template class BPlusTreeInternalPage<GenericKey<16>, page_id_t, GenericComparator<16>>;

@@ -41,6 +41,10 @@ void BPlusTreePage::SetMaxSize(int size) { max_size_ = size; }
  */
 int BPlusTreePage::GetMinSize() const { return max_size_/2; }
 
+int BPlusTreePage::MiddleIndex() const {
+  return (GetMaxSize() + 1) / 2;
+}
+
 /*
  * Helper methods to get/set parent page id
  */
@@ -57,5 +61,11 @@ void BPlusTreePage::SetPageId(page_id_t page_id) { page_id_ = page_id; }
  * Helper methods to set lsn
  */
 void BPlusTreePage::SetLSN(lsn_t lsn) { lsn_ = lsn; }
+
+void BPlusTreePage::IndexRangeChecker(int index) const {
+  if (index < 0 || index >= GetSize()) {
+    throw Exception(ExceptionType::OUT_OF_RANGE, "OOR");
+  }
+}
 
 }  // namespace bustub

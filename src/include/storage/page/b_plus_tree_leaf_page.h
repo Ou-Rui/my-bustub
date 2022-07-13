@@ -45,6 +45,7 @@ class BPlusTreeLeafPage : public BPlusTreePage {
   // After creating a new leaf page from buffer pool, must call initialize
   // method to set default values
   void Init(page_id_t page_id, page_id_t parent_id = INVALID_PAGE_ID, int max_size = LEAF_PAGE_SIZE);
+
   // helper methods
   page_id_t GetNextPageId() const;
   void SetNextPageId(page_id_t next_page_id);
@@ -67,7 +68,7 @@ class BPlusTreeLeafPage : public BPlusTreePage {
   void CopyNFrom(MappingType *items, int size);
   void CopyLastFrom(const MappingType &item);
   void CopyFirstFrom(const MappingType &item);
-  page_id_t next_page_id_;
+  page_id_t next_page_id_ = INVALID_PAGE_ID;
   MappingType array[0];
 };
 }  // namespace bustub

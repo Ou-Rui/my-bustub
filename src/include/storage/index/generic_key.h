@@ -84,9 +84,11 @@ class GenericComparator {
       Value rhs_value = (rhs.ToValue(key_schema_, i));
 
       if (lhs_value.CompareLessThan(rhs_value) == CmpBool::CmpTrue) {
+        // l < r
         return -1;
       }
       if (lhs_value.CompareGreaterThan(rhs_value) == CmpBool::CmpTrue) {
+        // l > r
         return 1;
       }
     }

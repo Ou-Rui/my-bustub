@@ -53,6 +53,7 @@ class BPlusTreePage {
   int GetMaxSize() const;
   void SetMaxSize(int max_size);
   int GetMinSize() const;
+  int MiddleIndex() const;
 
   page_id_t GetParentPageId() const;
   void SetParentPageId(page_id_t parent_page_id);
@@ -62,12 +63,16 @@ class BPlusTreePage {
 
   void SetLSN(lsn_t lsn = INVALID_LSN);
 
+ protected:
+  // my helper methods
+  void IndexRangeChecker(int index) const;
+
  private:
   // member variable, attributes that both internal and leaf page share
   IndexPageType page_type_ __attribute__((__unused__));
   lsn_t lsn_ __attribute__((__unused__));
-  int size_ __attribute__((__unused__));
-  int max_size_ __attribute__((__unused__));
+  int size_ __attribute__((__unused__)); // key#
+  int max_size_ __attribute__((__unused__));  // max key#
   page_id_t parent_page_id_ __attribute__((__unused__));
   page_id_t page_id_ __attribute__((__unused__));
 };

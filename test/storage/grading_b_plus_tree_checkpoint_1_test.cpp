@@ -24,8 +24,9 @@ TEST(BPlusTreeTests, SplitTest) {
   GenericComparator<8> comparator(key_schema);
 
   DiskManager *disk_manager = new DiskManager("test.db");
+  // pool size is large enough
   BufferPoolManager *bpm = new BufferPoolManager(50, disk_manager);
-  // create b+ tree
+  // create b+ tree, max_key# = 2
   BPlusTree<GenericKey<8>, RID, GenericComparator<8>> tree("foo_pk", bpm, comparator, 2, 3);
   GenericKey<8> index_key;
   RID rid;
@@ -38,6 +39,7 @@ TEST(BPlusTreeTests, SplitTest) {
   (void)header_page;
 
   std::vector<int64_t> keys = {1, 2, 3, 4, 5};
+  // insert key = 1 ~ 5
   for (auto key : keys) {
     int64_t value = key & 0xFFFFFFFF;
     rid.Set(static_cast<int32_t>(key >> 32), value);
@@ -51,6 +53,7 @@ TEST(BPlusTreeTests, SplitTest) {
     index_key.SetFromInteger(key);
     EXPECT_EQ(false, tree.Insert(index_key, rid, transaction));
   }
+  // find the leaf node that contains key = 1
   index_key.SetFromInteger(1);
   auto leaf_node =
       reinterpret_cast<BPlusTreeLeafPage<GenericKey<8>, RID, GenericComparator<8>> *>(tree.FindLeafPage(index_key));
@@ -60,6 +63,7 @@ TEST(BPlusTreeTests, SplitTest) {
 
   // Check the next 4 pages
   for (int i = 0; i < 4; i++) {
+    // check the sibling pointer
     EXPECT_NE(INVALID_PAGE_ID, leaf_node->GetNextPageId());
     leaf_node = reinterpret_cast<BPlusTreeLeafPage<GenericKey<8>, RID, GenericComparator<8>> *>(
         bpm->FetchPage(leaf_node->GetNextPageId()));
@@ -82,7 +86,7 @@ TEST(BPlusTreeTests, SplitTest) {
  * increasing order. Check whether the key-value pair is valid
  * using GetValue
  */
-TEST(BPlusTreeTests, InsertTest1) {
+TEST(BPlusTreeTests, DISABLED_InsertTest1) {
   // create KeyComparator and index schema
   Schema *key_schema = ParseCreateStatement("a bigint");
   GenericComparator<8> comparator(key_schema);
@@ -135,7 +139,7 @@ TEST(BPlusTreeTests, InsertTest1) {
  * a reversed order. Check whether the key-value pair is valid
  * using GetValue
  */
-TEST(BPlusTreeTests, InsertTest2) {
+TEST(BPlusTreeTests, DISABLED_VInsertTest2) {
   // create KeyComparator and index schema
   Schema *key_schema = ParseCreateStatement("a bigint");
   GenericComparator<8> comparator(key_schema);
@@ -188,7 +192,7 @@ TEST(BPlusTreeTests, InsertTest2) {
  * a random order. Check whether the key-value pair is valid
  * using GetValue
  */
-TEST(BPlusTreeTests, ScaleTest) {
+TEST(BPlusTreeTests, DISABLED_ScaleTest) {
   // create KeyComparator and index schema
   Schema *key_schema = ParseCreateStatement("a bigint");
   GenericComparator<8> comparator(key_schema);
