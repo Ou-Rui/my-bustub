@@ -88,24 +88,24 @@ ValueType B_PLUS_TREE_INTERNAL_PAGE_TYPE::ValueAt(int index) const {
  */
 INDEX_TEMPLATE_ARGUMENTS
 ValueType B_PLUS_TREE_INTERNAL_PAGE_TYPE::Lookup(const KeyType &key, const KeyComparator &comparator) const {
-//  int l = 1;
-//  int r = GetSize() - 1;
-//  while (l < r) {
-//    int m = ((r - l) >> 1) + l;
-//    if (comparator(key, array[m].first) < 0) {
-//      r = m;
-//    } else {
-//      l = m + 1;
-//    }
-//  }
+  //  int l = 1;
+  //  int r = GetSize() - 1;
+  //  while (l < r) {
+  //    int m = ((r - l) >> 1) + l;
+  //    if (comparator(key, array[m].first) < 0) {
+  //      r = m;
+  //    } else {
+  //      l = m + 1;
+  //    }
+  //  }
   // TODO(cicada): Binary Search
   int size = GetSize();
   for (int i = 1; i < size; ++i) {
     if (comparator(key, array[i].first) < 0) {
-      return array[i-1].second;
+      return array[i - 1].second;
     }
   }
-  return array[size-1].second;
+  return array[size - 1].second;
 }
 
 /*****************************************************************************
@@ -152,11 +152,11 @@ int B_PLUS_TREE_INTERNAL_PAGE_TYPE::InsertNodeAfter(const ValueType &old_value, 
   }
   // move the pairs backward
   for (int i = size - 1; i > index; i--) {
-    array[i+1] = array[i];
+    array[i + 1] = array[i];
   }
   // insert the new pair
-  array[index+1] = std::make_pair(new_key, new_value);
-  SetSize(size+1);
+  array[index + 1] = std::make_pair(new_key, new_value);
+  SetSize(size + 1);
   LOG_INFO("found.. val = %d, index = %d, new_size = %d", old_value, index, GetSize());
   return GetSize();
 }
@@ -188,7 +188,7 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::CopyNFrom(MappingType *items, int size, Buf
   for (int i = 0; i < size; i++) {
     array[i] = *items;
     page_id_t page_id = array[i].second;
-    auto child_page = reinterpret_cast<BPlusTreePage *> (buffer_pool_manager->FetchPage(page_id));
+    auto child_page = reinterpret_cast<BPlusTreePage *>(buffer_pool_manager->FetchPage(page_id));
     if (child_page == nullptr) {
       throw Exception(ExceptionType::INVALID, "child_page invalid");
     }
@@ -211,7 +211,7 @@ INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_INTERNAL_PAGE_TYPE::Remove(int index) {
   int size = GetSize();
   for (int i = index; i < size - 1; i++) {
-    array[i] = array[i+1];
+    array[i] = array[i + 1];
   }
   SetSize(size + 1);
 }

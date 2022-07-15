@@ -53,7 +53,7 @@ class BPlusTree {
 
   // return the value associated with a given key
   bool GetValue(const KeyType &key, std::vector<ValueType> *result, Transaction *transaction = nullptr);
-  B_PLUS_TREE_LEAF_PAGE_TYPE* FindLeaf(const KeyType &key);
+  B_PLUS_TREE_LEAF_PAGE_TYPE *FindLeaf(const KeyType &key);
 
   // index iterator for range scan
   INDEXITERATOR_TYPE begin();
@@ -111,7 +111,7 @@ class BPlusTree {
   void ToString(BPlusTreePage *page, BufferPoolManager *bpm) const;
 
   /* My Helper */
-  B_PLUS_TREE_LEAF_PAGE_TYPE* FindLeftMostLeaf() const;
+  B_PLUS_TREE_LEAF_PAGE_TYPE *FindLeftMostLeaf() const;
 
   // member variable
   std::string index_name_;

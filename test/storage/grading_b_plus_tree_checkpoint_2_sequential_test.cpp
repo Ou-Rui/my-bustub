@@ -5,10 +5,10 @@
 #include <algorithm>
 #include <cstdio>
 
-#include "b_plus_tree_test_util.h" // NOLINT
+#include "b_plus_tree_test_util.h"  // NOLINT
 #include "buffer/buffer_pool_manager.h"
-#include "storage/index/b_plus_tree.h"
 #include "gtest/gtest.h"
+#include "storage/index/b_plus_tree.h"
 
 namespace bustub {
 
@@ -431,7 +431,7 @@ TEST(BPlusTreeTests, SequentialMixTest) {
   // first, populate index
   std::vector<int64_t> for_insert;
   std::vector<int64_t> for_delete;
-  size_t sieve = 2; // divide evenly
+  size_t sieve = 2;  // divide evenly
   size_t total_keys = 1000;
   for (size_t i = 1; i <= total_keys; i++) {
     if (i % sieve == 0) {
@@ -482,4 +482,4 @@ TEST(BPlusTreeTests, SequentialMixTest) {
   remove("test.db");
   remove("test.log");
 }
-} // namespace bustub
+}  // namespace bustub

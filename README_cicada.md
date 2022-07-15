@@ -1,4 +1,7 @@
 # Project2 B+Tree
+## 22.7.15
+- 通过Checkpoint1
+
 ## 22.7.13
 - 完成Split_Test
 

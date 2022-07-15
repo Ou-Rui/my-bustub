@@ -12,8 +12,8 @@
 #include <sstream>
 
 #include "common/exception.h"
-#include "common/rid.h"
 #include "common/logger.h"
+#include "common/rid.h"
 #include "storage/page/b_plus_tree_leaf_page.h"
 
 namespace bustub {
@@ -91,7 +91,7 @@ const MappingType &B_PLUS_TREE_LEAF_PAGE_TYPE::GetItem(int index) {
 INDEX_TEMPLATE_ARGUMENTS
 int B_PLUS_TREE_LEAF_PAGE_TYPE::Insert(const KeyType &key, const ValueType &value, const KeyComparator &comparator) {
   LOG_INFO("key = %lu, val = %s", key.ToString(), value.ToString().c_str());
-  // TODO: Binary Search
+  // TODO(cicada): Binary Search
   int index = 0;
   int size = GetSize();
   for (; index < size; index++) {
@@ -107,13 +107,13 @@ int B_PLUS_TREE_LEAF_PAGE_TYPE::Insert(const KeyType &key, const ValueType &valu
   }
   // move pairs backward
   for (int i = size - 1; i >= index; i--) {
-    array[i+1] = array[i];
+    array[i + 1] = array[i];
   }
   // insert kv pair, ++size
   array[index] = std::make_pair(key, value);
-  SetSize(size+1);
-  LOG_INFO("insert done.. key = %lu, val = %s, index = %d, new_size = %d",
-           key.ToString(), value.ToString().c_str(), index, GetSize());
+  SetSize(size + 1);
+  LOG_INFO("insert done.. key = %lu, val = %s, index = %d, new_size = %d", key.ToString(), value.ToString().c_str(),
+           index, GetSize());
   return GetSize();
 }
 

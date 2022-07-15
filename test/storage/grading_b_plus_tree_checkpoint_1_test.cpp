@@ -5,10 +5,10 @@
 #include <cstdio>
 #include <random>
 
-#include "b_plus_tree_test_util.h" // NOLINT
+#include "b_plus_tree_test_util.h"  // NOLINT
 #include "buffer/buffer_pool_manager.h"
-#include "storage/index/b_plus_tree.h"
 #include "gtest/gtest.h"
+#include "storage/index/b_plus_tree.h"
 
 namespace bustub {
 /*
@@ -86,7 +86,7 @@ TEST(BPlusTreeTests, SplitTest) {
  * increasing order. Check whether the key-value pair is valid
  * using GetValue
  */
-TEST(BPlusTreeTests, DISABLED_InsertTest1) {
+TEST(BPlusTreeTests, InsertTest1) {
   // create KeyComparator and index schema
   Schema *key_schema = ParseCreateStatement("a bigint");
   GenericComparator<8> comparator(key_schema);
@@ -139,7 +139,7 @@ TEST(BPlusTreeTests, DISABLED_InsertTest1) {
  * a reversed order. Check whether the key-value pair is valid
  * using GetValue
  */
-TEST(BPlusTreeTests, DISABLED_VInsertTest2) {
+TEST(BPlusTreeTests, InsertTest2) {
   // create KeyComparator and index schema
   Schema *key_schema = ParseCreateStatement("a bigint");
   GenericComparator<8> comparator(key_schema);
@@ -192,7 +192,7 @@ TEST(BPlusTreeTests, DISABLED_VInsertTest2) {
  * a random order. Check whether the key-value pair is valid
  * using GetValue
  */
-TEST(BPlusTreeTests, DISABLED_ScaleTest) {
+TEST(BPlusTreeTests, ScaleTest) {
   // create KeyComparator and index schema
   Schema *key_schema = ParseCreateStatement("a bigint");
   GenericComparator<8> comparator(key_schema);
@@ -244,4 +244,4 @@ TEST(BPlusTreeTests, DISABLED_ScaleTest) {
   remove("test.db");
   remove("test.log");
 }
-} // namespace bustub
+}  // namespace bustub
