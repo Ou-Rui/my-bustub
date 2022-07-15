@@ -1,6 +1,7 @@
 # Project2 B+Tree
 ## 22.7.15
 - 通过Checkpoint1
+- Checkpoint1节点内优化为二分查找
 
 ## 22.7.13
 - 完成Split_Test

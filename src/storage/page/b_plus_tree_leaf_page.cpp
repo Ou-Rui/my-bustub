@@ -51,14 +51,7 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::SetNextPageId(page_id_t next_page_id) { next_pa
  */
 INDEX_TEMPLATE_ARGUMENTS
 int B_PLUS_TREE_LEAF_PAGE_TYPE::KeyIndex(const KeyType &key, const KeyComparator &comparator) const {
-  // TODO(cicada): Binary Search
-  int size = GetSize();
-  for (int i = 0; i < size; i++) {
-    if (comparator(key, array[i].first) == 0) {
-      return i;
-    }
-  }
-  return -1;
+  return BSEqualIndex(key, comparator);
 }
 
 /*
@@ -82,6 +75,59 @@ const MappingType &B_PLUS_TREE_LEAF_PAGE_TYPE::GetItem(int index) {
 }
 
 /*****************************************************************************
+ * Binary Search
+ *****************************************************************************/
+/**
+ * Binary Search, Find the "Index" of the key == the given key
+ * if no such key, return -1
+ * called by KeyIndex()
+ */
+INDEX_TEMPLATE_ARGUMENTS
+int B_PLUS_TREE_LEAF_PAGE_TYPE::BSEqualIndex(const KeyType &key, const KeyComparator &comparator) const {
+  int left = 0;
+  int right = GetSize() - 1;
+  while (left < right) {
+    int mid = ((right - left) >> 1) + left;
+    KeyType m_key = array[mid].first;
+    if (comparator(m_key, key) == 0) {
+      return mid;
+    }
+    if (comparator(m_key, key) < 0) {
+      left = mid + 1;
+    } else {
+      right = mid;
+    }
+  }
+  // if no such key, return -1
+  return comparator(array[left].first, key) == 0 ? left : -1;
+}
+
+/**
+ * Binary Search, Find "Index" of the first key "Greater or Equal" than/to the given key
+ * if all keys are less than the given key, return GetSize()
+ * called by Lookup()
+ */
+INDEX_TEMPLATE_ARGUMENTS
+int B_PLUS_TREE_LEAF_PAGE_TYPE::BSFirstGEIndex(const KeyType &key, const KeyComparator &comparator) const {
+  int left = 0;
+  int right = GetSize() - 1;
+  while (left < right) {
+    int mid = ((right - left) >> 1) + left;
+    KeyType m_key = array[mid].first;
+    if (comparator(m_key, key) == 0) {
+      return mid;
+    }
+    if (comparator(m_key, key) < 0) {
+      left = mid + 1;
+    } else {
+      right = mid;
+    }
+  }
+  // if all keys are less than the given key, return GetSize()
+  return comparator(array[left].first, key) >= 0 ? left : GetSize();
+}
+
+/*****************************************************************************
  * INSERTION
  *****************************************************************************/
 /*
@@ -91,19 +137,11 @@ const MappingType &B_PLUS_TREE_LEAF_PAGE_TYPE::GetItem(int index) {
 INDEX_TEMPLATE_ARGUMENTS
 int B_PLUS_TREE_LEAF_PAGE_TYPE::Insert(const KeyType &key, const ValueType &value, const KeyComparator &comparator) {
   LOG_INFO("key = %lu, val = %s", key.ToString(), value.ToString().c_str());
-  // TODO(cicada): Binary Search
-  int index = 0;
   int size = GetSize();
-  for (; index < size; index++) {
-    // duplicate check
-    if (comparator(key, array[index].first) == 0) {
-      LOG_INFO("Duplicate key = %lu", key.ToString());
-      return size;
-    }
-    // key < array[index].first
-    if (comparator(key, array[index].first) < 0) {
-      break;
-    }
+  int index = BSFirstGEIndex(key, comparator);
+  if (comparator(key, array[index].first) == 0) {
+    LOG_INFO("Duplicate key = %lu", key.ToString());
+    return GetSize();
   }
   // move pairs backward
   for (int i = size - 1; i >= index; i--) {

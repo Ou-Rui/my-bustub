@@ -58,6 +58,7 @@ class BPlusTreeInternalPage : public BPlusTreePage {
                          BufferPoolManager *buffer_pool_manager);
 
  private:
+  int BSFirstGIndex(const KeyType &key, const KeyComparator &comparator) const;
   void CopyNFrom(MappingType *items, int size, BufferPoolManager *buffer_pool_manager);
   void CopyLastFrom(const MappingType &pair, BufferPoolManager *buffer_pool_manager);
   void CopyFirstFrom(const MappingType &pair, BufferPoolManager *buffer_pool_manager);

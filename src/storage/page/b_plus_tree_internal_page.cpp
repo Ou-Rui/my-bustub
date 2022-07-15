@@ -45,7 +45,8 @@ KeyType B_PLUS_TREE_INTERNAL_PAGE_TYPE::KeyAt(int index) const {
 
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_INTERNAL_PAGE_TYPE::SetKeyAt(int index, const KeyType &key) {
-  // TODO(cicada): Re-Sorting?
+  // used to set the first key = {} for now
+  assert(index == 0);
   IndexRangeChecker(index);
   array[index].first = key;
 }
@@ -79,6 +80,32 @@ ValueType B_PLUS_TREE_INTERNAL_PAGE_TYPE::ValueAt(int index) const {
 }
 
 /*****************************************************************************
+ * Binary Search
+ *****************************************************************************/
+/**
+ * Binary Search, Find "Index" of the first key "Greater" than the given key
+ * if all keys are "Less or Equal" than/to the given key, return GetSize()
+ * called by Lookup()
+ */
+INDEX_TEMPLATE_ARGUMENTS
+int B_PLUS_TREE_INTERNAL_PAGE_TYPE::BSFirstGIndex(const KeyType &key, const KeyComparator &comparator) const {
+  // InternalPage's key[0] is {}, start from left = 1
+  int left = 1;
+  int right = GetSize() - 1;
+  while (left < right) {
+    int mid = ((right - left) >> 1) + left;
+    KeyType m_key = array[mid].first;
+    if (comparator(m_key, key) <= 0) {
+      left = mid + 1;
+    } else {
+      right = mid;
+    }
+  }
+  // if all keys are "Less or Equal" than/to the given key, return GetSize()
+  return comparator(array[left].first, key) > 0 ? left : GetSize();
+}
+
+/*****************************************************************************
  * LOOKUP
  *****************************************************************************/
 /*
@@ -88,24 +115,8 @@ ValueType B_PLUS_TREE_INTERNAL_PAGE_TYPE::ValueAt(int index) const {
  */
 INDEX_TEMPLATE_ARGUMENTS
 ValueType B_PLUS_TREE_INTERNAL_PAGE_TYPE::Lookup(const KeyType &key, const KeyComparator &comparator) const {
-  //  int l = 1;
-  //  int r = GetSize() - 1;
-  //  while (l < r) {
-  //    int m = ((r - l) >> 1) + l;
-  //    if (comparator(key, array[m].first) < 0) {
-  //      r = m;
-  //    } else {
-  //      l = m + 1;
-  //    }
-  //  }
-  // TODO(cicada): Binary Search
-  int size = GetSize();
-  for (int i = 1; i < size; ++i) {
-    if (comparator(key, array[i].first) < 0) {
-      return array[i - 1].second;
-    }
-  }
-  return array[size - 1].second;
+  int index = BSFirstGIndex(key, comparator);
+  return array[index - 1].second;
 }
 
 /*****************************************************************************

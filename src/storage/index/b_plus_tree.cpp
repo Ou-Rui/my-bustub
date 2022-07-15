@@ -55,6 +55,10 @@ bool BPLUSTREE_TYPE::GetValue(const KeyType &key, std::vector<ValueType> *result
   return true;
 }
 
+/**
+ *  Find the "right leaf page" of the key
+ *  return with the page pinned
+ */
 INDEX_TEMPLATE_ARGUMENTS
 B_PLUS_TREE_LEAF_PAGE_TYPE *BPLUSTREE_TYPE::FindLeaf(const KeyType &key) {
   page_id_t cur_page_id = INVALID_PAGE_ID;
@@ -250,13 +254,19 @@ void BPLUSTREE_TYPE::InsertIntoParent(BPlusTreePage *old_node, const KeyType &ke
  *****************************************************************************/
 /*
  * Delete key & value pair associated with input key
- * If current tree is empty, return immdiately.
+ * If current tree is empty, return immediately.
  * If not, User needs to first find the right leaf page as deletion target, then
  * delete entry from leaf page. Remember to deal with redistribute or merge if
  * necessary.
  */
 INDEX_TEMPLATE_ARGUMENTS
-void BPLUSTREE_TYPE::Remove(const KeyType &key, Transaction *transaction) {}
+void BPLUSTREE_TYPE::Remove(const KeyType &key, Transaction *transaction) {
+  if (IsEmpty()) {
+    return;
+  }
+  auto leaf_page = FindLeaf(key);
+  leaf_page->RemoveAndDeleteRecord(key, comparator_);
+}
 
 /*
  * User needs to first find the sibling of input page. If sibling's size + input

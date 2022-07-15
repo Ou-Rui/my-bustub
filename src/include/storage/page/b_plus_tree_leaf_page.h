@@ -65,6 +65,8 @@ class BPlusTreeLeafPage : public BPlusTreePage {
   void MoveLastToFrontOf(BPlusTreeLeafPage *recipient);
 
  private:
+  int BSEqualIndex(const KeyType &key, const KeyComparator &comparator) const;
+  int BSFirstGEIndex(const KeyType &key, const KeyComparator &comparator) const;
   void CopyNFrom(MappingType *items, int size);
   void CopyLastFrom(const MappingType &item);
   void CopyFirstFrom(const MappingType &item);
