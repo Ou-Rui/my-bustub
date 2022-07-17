@@ -231,8 +231,9 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::Remove(int index) {
  */
 INDEX_TEMPLATE_ARGUMENTS
 ValueType B_PLUS_TREE_INTERNAL_PAGE_TYPE::RemoveAndReturnOnlyChild() {
+  page_id_t child_page_id = array[0].second;
   SetSize(0);
-  return array[0].second;
+  return child_page_id;
 }
 /*****************************************************************************
  * MERGE
@@ -323,7 +324,7 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::MoveLastToFrontOf(BPlusTreeInternalPage *re
   recipient->SetKeyAt(0, middle_key);
   // move last to front of
   int size = GetSize();
-  MappingType &last_item = array[size - 1];
+  MappingType last_item = array[size - 1];
   recipient->CopyFirstFrom(last_item, buffer_pool_manager);
   SetSize(size - 1);
 }

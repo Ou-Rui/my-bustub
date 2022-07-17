@@ -324,7 +324,7 @@ N *BPLUSTREE_TYPE::GetSiblingNode(N *node, int *index, Transaction *transaction)
     auto sibling_page = reinterpret_cast<B_PLUS_TREE_LEAF_PAGE_TYPE *>
         (buffer_pool_manager_->FetchPage(sibling_page_id));
 
-    if (leaf_page->GetParentPageId() != sibling_page->GetParentPageId()) {
+    if (sibling_page_id == INVALID_PAGE_ID || leaf_page->GetParentPageId() != sibling_page->GetParentPageId()) {
       // next page is not sibling...
       *index = 1;
       page_id_t parent_page_id = leaf_page->GetParentPageId();
@@ -336,6 +336,7 @@ N *BPLUSTREE_TYPE::GetSiblingNode(N *node, int *index, Transaction *transaction)
           (buffer_pool_manager_->FetchPage(sibling_page_id));
       buffer_pool_manager_->UnpinPage(parent_page_id, false);
     }
+    LOG_INFO("find sibling of leaf page_id = %d, sibling_page_id = %d", node->GetPageId(), sibling_page_id);
     return reinterpret_cast<N *> (sibling_page);
   }
   // internal page
@@ -356,6 +357,7 @@ N *BPLUSTREE_TYPE::GetSiblingNode(N *node, int *index, Transaction *transaction)
   auto sibling_page = reinterpret_cast<BPlusTreeInternalPage<KeyType, page_id_t, KeyComparator> *>
       (buffer_pool_manager_->FetchPage(sibling_page_id));
   buffer_pool_manager_->UnpinPage(parent_page->GetPageId(), false);
+  LOG_INFO("find sibling of internal page_id = %d, sibling_page_id = %d", node->GetPageId(), sibling_page_id);
   return reinterpret_cast<N *> (sibling_page);
 }
 
@@ -441,6 +443,8 @@ bool BPLUSTREE_TYPE::Coalesce(N **neighbor_node, N **node,
 INDEX_TEMPLATE_ARGUMENTS
 template <typename N>
 void BPLUSTREE_TYPE::Redistribute(N *neighbor_node, N *node, int index) {
+  LOG_INFO("node_id = %d, neighbor_id = %d, index = %d",
+           node->GetPageId(), neighbor_node->GetPageId(), index);
   KeyType popup_key{};
   int popup_index;
   if (node->IsLeafPage()) {
@@ -531,6 +535,9 @@ bool BPLUSTREE_TYPE::AdjustRoot(BPlusTreePage *old_root_node) {
   root_page_id_ = old_root->RemoveAndReturnOnlyChild();
   UpdateRootPageId();
   buffer_pool_manager_->DeletePage(old_root_node->GetPageId());
+  auto new_root = reinterpret_cast<BPlusTreePage *> (buffer_pool_manager_->FetchPage(root_page_id_));
+  new_root->SetParentPageId(INVALID_PAGE_ID);
+  buffer_pool_manager_->UnpinPage(root_page_id_, true);
   LOG_INFO("switch root to page_id = %d", root_page_id_);
   return true;
 }

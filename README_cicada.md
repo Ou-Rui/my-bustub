@@ -2,6 +2,7 @@
 ## 22.7.17
 - 初步写完了Delete和Iterator，通过DeleteTest1/2
   - ScaleTest还不行，OOR
+- ScaleTest PASS
 
 ## 22.7.15
 - 通过Checkpoint1

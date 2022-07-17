@@ -221,6 +221,7 @@ int B_PLUS_TREE_LEAF_PAGE_TYPE::RemoveAndDeleteRecord(const KeyType &key, const 
   int index = BSEqualIndex(key, comparator);
   if (index == -1) {
     LOG_INFO("no such key = %lu.. return", key.ToString());
+    return size;
   }
   for (int i = index; i < size; i++) {
     array[i] = array[i + 1];
@@ -262,7 +263,7 @@ INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_LEAF_PAGE_TYPE::MoveFirstToEndOf(BPlusTreeLeafPage *recipient) {
   // move last to front of
   int size = GetSize();
-  MappingType &first_item = array[0];
+  MappingType first_item = array[0];
   // move all items forward
   for (int i = 1; i < size; ++i) {
     array[i - 1] = array[i];
@@ -288,7 +289,7 @@ INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_LEAF_PAGE_TYPE::MoveLastToFrontOf(BPlusTreeLeafPage *recipient) {
   // move last to front of
   int size = GetSize();
-  MappingType &last_item = array[size - 1];
+  MappingType last_item = array[size - 1];
   recipient->CopyFirstFrom(last_item);
   SetSize(size - 1);
 }
