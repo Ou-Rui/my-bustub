@@ -95,6 +95,9 @@ class BPlusTree {
   bool CoalesceOrRedistribute(N *node, Transaction *transaction = nullptr);
 
   template <typename N>
+  N *GetSiblingNode(N *node, int *index, Transaction *transaction = nullptr);
+
+  template <typename N>
   bool Coalesce(N **neighbor_node, N **node, BPlusTreeInternalPage<KeyType, page_id_t, KeyComparator> **parent,
                 int index, Transaction *transaction = nullptr);
 
@@ -112,6 +115,7 @@ class BPlusTree {
 
   /* My Helper */
   B_PLUS_TREE_LEAF_PAGE_TYPE *FindLeftMostLeaf() const;
+  B_PLUS_TREE_LEAF_PAGE_TYPE *FindRightMostLeaf() const;
 
   // member variable
   std::string index_name_;

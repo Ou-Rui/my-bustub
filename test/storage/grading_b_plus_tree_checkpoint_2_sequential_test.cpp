@@ -17,7 +17,7 @@ namespace bustub {
  * Description: The same test that has been run for checkpoint 1,
  * but added iterator for value checking
  */
-TEST(BPlusTreeTests, InsertTest1) {
+TEST(BPlusTreeTests, DISABLED_InsertTest1) {
   // create KeyComparator and index schema
   Schema *key_schema = ParseCreateStatement("a bigint");
   GenericComparator<8> comparator(key_schema);
@@ -80,7 +80,7 @@ TEST(BPlusTreeTests, InsertTest1) {
  * Description: The same test that has been run for checkpoint 1
  * but added iterator for value checking
  */
-TEST(BPlusTreeTests, InsertTest2) {
+TEST(BPlusTreeTests, DISABLED_InsertTest2) {
   // create KeyComparator and index schema
   Schema *key_schema = ParseCreateStatement("a bigint");
   GenericComparator<8> comparator(key_schema);
@@ -151,10 +151,10 @@ TEST(BPlusTreeTests, InsertTest2) {
 /*
  * Score: 5
  * Description: Insert a set of keys, use GetValue and iterator to
- * check the the inserted keys. Then delete a subset of the keys.
+ * check the inserted keys. Then delete a subset of the keys.
  * Finally use the iterator to check the remained keys.
  */
-TEST(BPlusTreeTests, DeleteTest1) {
+TEST(BPlusTreeTests, DISABLED_DeleteTest1) {
   // create KeyComparator and index schema
   std::string createStmt = "a bigint";
   Schema *key_schema = ParseCreateStatement(createStmt);
@@ -234,10 +234,10 @@ TEST(BPlusTreeTests, DeleteTest1) {
 
 /*
  * Score: 5
- * Description: Similar to DeleteTest2, except that, during the Remove step,
+ * Description: Similar to DeleteTest1, except that, during the Remove step,
  * a different subset of keys are removed.
  */
-TEST(BPlusTreeTests, DeleteTest2) {
+TEST(BPlusTreeTests, DISABLED_DeleteTest2) {
   // create KeyComparator and index schema
   Schema *key_schema = ParseCreateStatement("a bigint");
   GenericComparator<8> comparator(key_schema);
@@ -410,7 +410,7 @@ TEST(BPlusTreeTests, ScaleTest) {
  * Check all the keys get are the same set of keys as previously
  * inserted.
  */
-TEST(BPlusTreeTests, SequentialMixTest) {
+TEST(BPlusTreeTests, DISABLED_SequentialMixTest) {
   // create KeyComparator and index schema
   Schema *key_schema = ParseCreateStatement("a bigint");
   GenericComparator<8> comparator(key_schema);

@@ -63,7 +63,6 @@ class BPlusTreePage {
 
   void SetLSN(lsn_t lsn = INVALID_LSN);
 
- protected:
   // my helper methods
   void IndexRangeChecker(int index) const;
 

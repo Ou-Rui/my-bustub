@@ -1,4 +1,8 @@
 # Project2 B+Tree
+## 22.7.17
+- 初步写完了Delete和Iterator，通过DeleteTest1/2
+  - ScaleTest还不行，OOR
+
 ## 22.7.15
 - 通过Checkpoint1
 - Checkpoint1节点内优化为二分查找
