@@ -631,6 +631,8 @@ B_PLUS_TREE_LEAF_PAGE_TYPE *BPLUSTREE_TYPE::FindRightMostLeaf() {
   return FindLeaf(KeyType{}, 1);
 }
 
+
+
 /**
  *  Find the "right leaf page" of the key
  *  return with the page pinned
@@ -642,73 +644,34 @@ INDEX_TEMPLATE_ARGUMENTS
 B_PLUS_TREE_LEAF_PAGE_TYPE *BPLUSTREE_TYPE::FindLeaf(const KeyType &key, int direction,
                                                      Transaction *transaction, OpType op_type) {
   page_id_t next_page_id;
-  BPlusTreePage *page;
+  BPlusTreePage *node;
   Page *cur_page = nullptr;
   Page *prev_page = nullptr;
   // root page critical
-  while (true) {
-    // get root_page_id first
-    latch_.lock();
-    next_page_id = root_page_id_;
-    LOG_INFO("FindLeaf try to find root, root_page_id = %d, key = %lu", root_page_id_, key.ToString());
-    latch_.unlock();
-    // fetch page
-    cur_page = buffer_pool_manager_->FetchPage(next_page_id);
-    page = reinterpret_cast<BPlusTreePage *> (cur_page);
-    LOG_INFO("find root? cur_page_id = %d, page_id = %d, key = %lu", cur_page->GetPageId(), page->GetPageId(), key.ToString());
-    if (op_type == OpType::FIND) {
-      cur_page->RLatch();
-    } else {
-      cur_page->WLatch();
-    }
-    LOG_INFO("find root? lock cur_page_id = %d, key = %lu", cur_page->GetPageId(), key.ToString());
-    // validate
-    latch_.lock();
-    if (cur_page->GetPageId() == root_page_id_) {
-      LOG_INFO("Find root!, root_page_id = %d, key = %lu", root_page_id_, key.ToString());
-      latch_.unlock();
-      break;
-    }
-    LOG_INFO("FindLeaf root changed... now_root_page_id = %d, cur_page_id = %d, retrying.., key = %lu",
-             root_page_id_, cur_page->GetPageId(), key.ToString());
-    latch_.unlock();
-    if (op_type == OpType::FIND) {
-      cur_page->RUnlatch();
-    } else {
-      cur_page->WUnlatch();
-    }
-  }
-
-  if (op_type != OpType::FIND) {
-    transaction->AddIntoPageSet(cur_page);
-  }
-
+  node = FindRoot(key, transaction, op_type);
   // if root_page is leaf, return
-  if (page->IsLeafPage()) {
-    return static_cast<B_PLUS_TREE_LEAF_PAGE_TYPE *>(page);
+  if (node->IsLeafPage()) {
+    return static_cast<B_PLUS_TREE_LEAF_PAGE_TYPE *>(node);
   }
 
+  prev_page = TOPAGE(node);
 
-
-  prev_page = cur_page;
-  auto root_internal_page = static_cast<BPlusTreeInternalPage<KeyType, page_id_t, KeyComparator> *>(page);
-  // decide next_page_id by input_param
-  if (direction == 0) {
-    // find by key
-    next_page_id = root_internal_page->Lookup(key, comparator_);
-  } else if (direction > 0) {
-    // right most
-    next_page_id = root_internal_page->ValueAt(root_internal_page->GetSize() - 1);
-  } else {
-    // left most
-    next_page_id = root_internal_page->ValueAt(0);
-  }
-  LOG_INFO("direction = %d, next_page_id = %d", direction, next_page_id);
-
-  while (true) {
+  while(true) {
+    auto internal_node = static_cast<BPlusTreeInternalPage<KeyType, page_id_t, KeyComparator> *>(node);
+    if (direction == 0) {
+      // find by key
+      next_page_id = internal_node->Lookup(key, comparator_);
+    } else if (direction > 0) {
+      // right most
+      next_page_id = internal_node->ValueAt(internal_node->GetSize() - 1);
+    } else {
+      // left most
+      next_page_id = internal_node->ValueAt(0);
+    }
+    LOG_INFO("direction = %d, next_page_id = %d", direction, next_page_id);
     cur_page = buffer_pool_manager_->FetchPage(next_page_id);
-    page = reinterpret_cast<BPlusTreePage *> (cur_page);
-    LOG_INFO("cur_page_id = %d, page_id = %d", cur_page->GetPageId(), page->GetPageId());
+    node = reinterpret_cast<BPlusTreePage *> (cur_page);
+    LOG_INFO("cur_page_id = %d, page_id = %d", cur_page->GetPageId(), node->GetPageId());
     // Latch Crabbing Logics
     if (op_type == OpType::FIND) {
       // find, Read Latch
@@ -720,7 +683,7 @@ B_PLUS_TREE_LEAF_PAGE_TYPE *BPLUSTREE_TYPE::FindLeaf(const KeyType &key, int dir
       // Insert / Delete, WLatch
       cur_page->WLatch();
       LOG_INFO("WLatch cur_page, page_id = %d", cur_page->GetPageId());
-      if (Safe(page, op_type)) {
+      if (Safe(node, op_type)) {
         // safe, release all prev pages
         LOG_INFO("safe, release all prev pages, key = %lu", key.ToString());
         ReleaseAllPages(transaction);
@@ -728,24 +691,57 @@ B_PLUS_TREE_LEAF_PAGE_TYPE *BPLUSTREE_TYPE::FindLeaf(const KeyType &key, int dir
       transaction->AddIntoPageSet(cur_page);
     }
 
-    if (page->IsLeafPage()) {
-      return static_cast<B_PLUS_TREE_LEAF_PAGE_TYPE *>(page);
+    if (node->IsLeafPage()) {
+      return static_cast<B_PLUS_TREE_LEAF_PAGE_TYPE *>(node);
     }
-    auto internal_page = static_cast<BPlusTreeInternalPage<KeyType, page_id_t, KeyComparator> *>(page);
-    // decide next_page_id by input_param
-    if (direction == 0) {
-      // find by key
-      next_page_id = internal_page->Lookup(key, comparator_);
-    } else if (direction > 0) {
-      // right most
-      next_page_id = internal_page->ValueAt(internal_page->GetSize() - 1);
-    } else {
-      // left most
-      next_page_id = internal_page->ValueAt(0);
-    }
-    LOG_INFO("direction = %d, next_page_id = %d", direction, next_page_id);
     prev_page = cur_page;
   }
+}
+
+INDEX_TEMPLATE_ARGUMENTS
+BPlusTreePage *BPLUSTREE_TYPE::FindRoot(const KeyType &key, Transaction *transaction, OpType op_type) {
+  page_id_t root_page_id;
+  Page* root_page;
+  BPlusTreePage *root_node;
+  // root page critical
+  while (true) {
+    // get root_page_id first
+    latch_.lock();
+    root_page_id = root_page_id_;
+    LOG_INFO("FindLeaf try to find root, root_page_id = %d, key = %lu", root_page_id_, key.ToString());
+    latch_.unlock();
+    // fetch page
+    root_page = buffer_pool_manager_->FetchPage(root_page_id);
+    root_node = reinterpret_cast<BPlusTreePage *> (root_page);
+    LOG_INFO("find root? root_page_id = %d, root_node_page_id = %d, key = %lu",
+             root_page->GetPageId(), root_node->GetPageId(), key.ToString());
+    if (op_type == OpType::FIND) {
+      root_page->RLatch();
+    } else {
+      root_page->WLatch();
+    }
+    LOG_INFO("find root? lock cur_page_id = %d, key = %lu", root_page->GetPageId(), key.ToString());
+    // validate
+    latch_.lock();
+    if (root_page->GetPageId() == root_page_id_) {
+      LOG_INFO("Find root!, root_page_id = %d, key = %lu", root_page_id_, key.ToString());
+      latch_.unlock();
+      break;
+    }
+    LOG_INFO("FindLeaf root changed... now_root_page_id = %d, cur_page_id = %d, retrying.., key = %lu",
+             root_page_id_, root_page->GetPageId(), key.ToString());
+    latch_.unlock();
+    if (op_type == OpType::FIND) {
+      root_page->RUnlatch();
+    } else {
+      root_page->WUnlatch();
+    }
+  }
+
+  if (op_type != OpType::FIND) {
+    transaction->AddIntoPageSet(root_page);
+  }
+  return root_node;
 }
 
 INDEX_TEMPLATE_ARGUMENTS
