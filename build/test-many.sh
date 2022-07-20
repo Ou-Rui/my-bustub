@@ -3,6 +3,7 @@
 # example:  /bin/bash ./test-many.sh 500 grading_buffer_pool_manager_concurrency_test
 # /bin/bash ./test-many.sh 1 grading_b_plus_tree_checkpoint_1_test
 # /bin/bash ./test-many.sh 1 grading_b_plus_tree_checkpoint_2_sequential_test
+# /bin/bash ./test-many.sh 500 grading_b_plus_tree_checkpoint_2_concurrent_test
 # TODO: can't be parallel for now..., i.e. parallelism == "1"
 
 rm -rf ./test-log

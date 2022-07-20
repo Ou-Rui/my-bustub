@@ -23,6 +23,14 @@ namespace bustub {
 
 #define BPLUSTREE_TYPE BPlusTree<KeyType, ValueType, KeyComparator>
 
+#define TOPAGE(page) reinterpret_cast<Page *> (page)
+
+enum class OpType {
+  FIND = 0,
+  INSERT = 1,
+  DELETE = 2,
+};
+
 /**
  * Main class providing the API for the Interactive B+ Tree.
  *
@@ -43,7 +51,7 @@ class BPlusTree {
                      int leaf_max_size = LEAF_PAGE_SIZE, int internal_max_size = INTERNAL_PAGE_SIZE);
 
   // Returns true if this B+ tree has no keys and values.
-  bool IsEmpty() const;
+  bool IsEmpty();
 
   // Insert a key-value pair into this B+ tree.
   bool Insert(const KeyType &key, const ValueType &value, Transaction *transaction = nullptr);
@@ -53,7 +61,6 @@ class BPlusTree {
 
   // return the value associated with a given key
   bool GetValue(const KeyType &key, std::vector<ValueType> *result, Transaction *transaction = nullptr);
-  B_PLUS_TREE_LEAF_PAGE_TYPE *FindLeaf(const KeyType &key);
 
   // index iterator for range scan
   INDEXITERATOR_TYPE begin();
@@ -114,8 +121,13 @@ class BPlusTree {
   void ToString(BPlusTreePage *page, BufferPoolManager *bpm) const;
 
   /* My Helper */
-  B_PLUS_TREE_LEAF_PAGE_TYPE *FindLeftMostLeaf() const;
-  B_PLUS_TREE_LEAF_PAGE_TYPE *FindRightMostLeaf() const;
+  B_PLUS_TREE_LEAF_PAGE_TYPE *FindLeaf(const KeyType &key, int direction,
+                                       Transaction *transaction = nullptr, OpType op_type = OpType::FIND);
+  B_PLUS_TREE_LEAF_PAGE_TYPE *FindLeftMostLeaf();
+  B_PLUS_TREE_LEAF_PAGE_TYPE *FindRightMostLeaf();
+  template <typename N>
+  bool Safe(N *node, OpType op_type = OpType::FIND) const;
+  void ReleaseAllPages(Transaction *transaction) const;
 
   // member variable
   std::string index_name_;
@@ -124,6 +136,7 @@ class BPlusTree {
   KeyComparator comparator_;
   int leaf_max_size_;
   int internal_max_size_;
+  std::mutex latch_;
 };
 
 }  // namespace bustub
