@@ -1,4 +1,7 @@
 # Project2 B+Tree
+## 22.7.20
+- PASS Concurrent Insert1/2
+
 ## 22.7.17
 - 初步写完了Delete和Iterator，通过DeleteTest1/2
   - ScaleTest还不行，OOR
