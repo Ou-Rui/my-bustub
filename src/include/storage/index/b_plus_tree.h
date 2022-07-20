@@ -21,9 +21,17 @@
 
 namespace bustub {
 
-#define BPLUSTREE_TYPE BPlusTree<KeyType, ValueType, KeyComparator>
+#define BPLUSTREE_TYPE    BPlusTree<KeyType, ValueType, KeyComparator>
 
-#define TOPAGE(page) reinterpret_cast<Page *> (page)
+#define NODE              BPlusTreePage
+#define LEAF_NODE         B_PLUS_TREE_LEAF_PAGE_TYPE
+#define INTERNAL_NODE     BPlusTreeInternalPage<KeyType, page_id_t, KeyComparator>
+
+#define TO_PAGE(node)           (reinterpret_cast<Page *> (node))
+#define TO_NODE(page)           (reinterpret_cast<NODE *> (page))
+#define TO_LEAF_NODE(page)      (reinterpret_cast<LEAF_NODE *> (page))
+#define TO_INTERNAL_NODE(page)  (reinterpret_cast<INTERNAL_NODE *> (page))
+
 
 enum class OpType {
   FIND = 0,
