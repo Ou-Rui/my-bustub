@@ -133,10 +133,9 @@ class BPlusTree {
                                        Transaction *transaction = nullptr, OpType op_type = OpType::FIND);
   B_PLUS_TREE_LEAF_PAGE_TYPE *FindLeftMostLeaf();
   B_PLUS_TREE_LEAF_PAGE_TYPE *FindRightMostLeaf();
-  BPlusTreePage *FindRoot(const KeyType &key, Transaction *transaction, OpType op_type);
   template <typename N>
   bool Safe(N *node, OpType op_type = OpType::FIND) const;
-  void ReleaseAllPages(Transaction *transaction) const;
+  void ReleaseAllPages(Transaction *transaction);
 
   // member variable
   std::string index_name_;
