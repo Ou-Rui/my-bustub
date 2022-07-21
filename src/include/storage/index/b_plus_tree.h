@@ -21,17 +21,16 @@
 
 namespace bustub {
 
-#define BPLUSTREE_TYPE    BPlusTree<KeyType, ValueType, KeyComparator>
+#define BPLUSTREE_TYPE BPlusTree<KeyType, ValueType, KeyComparator>
 
-#define NODE              BPlusTreePage
-#define LEAF_NODE         B_PLUS_TREE_LEAF_PAGE_TYPE
-#define INTERNAL_NODE     BPlusTreeInternalPage<KeyType, page_id_t, KeyComparator>
+#define NODE BPlusTreePage
+#define LEAF_NODE B_PLUS_TREE_LEAF_PAGE_TYPE
+#define INTERNAL_NODE BPlusTreeInternalPage<KeyType, page_id_t, KeyComparator>
 
-#define TO_PAGE(node)           (reinterpret_cast<Page *> (node))
-#define TO_NODE(page)           (reinterpret_cast<NODE *> (page))
-#define TO_LEAF_NODE(page)      (reinterpret_cast<LEAF_NODE *> (page))
-#define TO_INTERNAL_NODE(page)  (reinterpret_cast<INTERNAL_NODE *> (page))
-
+#define TO_PAGE(node) (reinterpret_cast<Page *>(node))
+#define TO_NODE(page) (reinterpret_cast<NODE *>(page))
+#define TO_LEAF_NODE(page) (reinterpret_cast<LEAF_NODE *>(page))
+#define TO_INTERNAL_NODE(page) (reinterpret_cast<INTERNAL_NODE *>(page))
 
 enum class OpType {
   FIND = 0,
@@ -119,7 +118,7 @@ class BPlusTree {
   template <typename N>
   void Redistribute(N *neighbor_node, N *node, int index);
 
-  bool AdjustRoot(BPlusTreePage *node);
+  bool AdjustRoot(BPlusTreePage *node, Transaction *transaction);
 
   void UpdateRootPageId(int insert_record = 0);
 
@@ -129,8 +128,8 @@ class BPlusTree {
   void ToString(BPlusTreePage *page, BufferPoolManager *bpm) const;
 
   /* My Helper */
-  B_PLUS_TREE_LEAF_PAGE_TYPE *FindLeaf(const KeyType &key, int direction,
-                                       Transaction *transaction = nullptr, OpType op_type = OpType::FIND);
+  B_PLUS_TREE_LEAF_PAGE_TYPE *FindLeaf(const KeyType &key, int direction, Transaction *transaction = nullptr,
+                                       OpType op_type = OpType::FIND);
   B_PLUS_TREE_LEAF_PAGE_TYPE *FindLeftMostLeaf();
   B_PLUS_TREE_LEAF_PAGE_TYPE *FindRightMostLeaf();
   template <typename N>

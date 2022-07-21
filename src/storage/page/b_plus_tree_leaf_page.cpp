@@ -216,8 +216,7 @@ bool B_PLUS_TREE_LEAF_PAGE_TYPE::Lookup(const KeyType &key, ValueType *value, co
 INDEX_TEMPLATE_ARGUMENTS
 int B_PLUS_TREE_LEAF_PAGE_TYPE::RemoveAndDeleteRecord(const KeyType &key, const KeyComparator &comparator) {
   int size = GetSize();
-  LOG_INFO("leaf remove key = %lu start, size = %d, page_id = %d",
-           key.ToString(), size, GetPageId());
+  LOG_INFO("leaf remove key = %lu start, size = %d, page_id = %d", key.ToString(), size, GetPageId());
   int index = BSEqualIndex(key, comparator);
   if (index == -1) {
     LOG_INFO("no such key = %lu.. return", key.ToString());

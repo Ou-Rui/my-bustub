@@ -263,7 +263,7 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::MoveAllTo(BPlusTreeInternalPage *recipient,
   // update children
   for (int i = rec_size; i < rec_size + size; i++) {
     page_id_t child_page_id = recipient->ValueAt(i);
-    auto child_page = reinterpret_cast<BPlusTreePage *> (buffer_pool_manager->FetchPage(child_page_id));
+    auto child_page = reinterpret_cast<BPlusTreePage *>(buffer_pool_manager->FetchPage(child_page_id));
     child_page->SetParentPageId(recipient->GetPageId());
     buffer_pool_manager->UnpinPage(child_page_id, true);
   }
@@ -305,7 +305,7 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::CopyLastFrom(const MappingType &pair, Buffe
   array[size] = pair;
   SetSize(size + 1);
   // update the new pair's parent_page_id
-  auto child_page = reinterpret_cast<BPlusTreePage *> (buffer_pool_manager->FetchPage(pair.second));
+  auto child_page = reinterpret_cast<BPlusTreePage *>(buffer_pool_manager->FetchPage(pair.second));
   child_page->SetParentPageId(GetParentPageId());
   buffer_pool_manager->UnpinPage(child_page->GetPageId(), true);
 }
@@ -344,7 +344,7 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::CopyFirstFrom(const MappingType &pair, Buff
   array[0] = pair;
   SetSize(size + 1);
   // update new pair's parent_page_id
-  auto child_page = reinterpret_cast<BPlusTreePage *> (buffer_pool_manager->FetchPage(pair.second));
+  auto child_page = reinterpret_cast<BPlusTreePage *>(buffer_pool_manager->FetchPage(pair.second));
   child_page->SetParentPageId(GetParentPageId());
   buffer_pool_manager->UnpinPage(child_page->GetPageId(), true);
 }

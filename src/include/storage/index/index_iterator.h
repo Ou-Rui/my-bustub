@@ -23,7 +23,7 @@ INDEX_TEMPLATE_ARGUMENTS
 class IndexIterator {
  public:
   // you may define your own constructor based on your member variables
-  IndexIterator(B_PLUS_TREE_LEAF_PAGE_TYPE *leaf, BufferPoolManager *bpm, int offset);
+  IndexIterator(B_PLUS_TREE_LEAF_PAGE_TYPE *page, BufferPoolManager *bpm, int offset);
   ~IndexIterator();
 
   bool isEnd();
@@ -32,9 +32,13 @@ class IndexIterator {
 
   IndexIterator &operator++();
 
-  bool operator==(const IndexIterator &itr) const { return page_->GetPageId() == itr.page_->GetPageId() && offset_ == itr.offset_;}
+  bool operator==(const IndexIterator &itr) const {
+    return page_->GetPageId() == itr.page_->GetPageId() && offset_ == itr.offset_;
+  }
 
-  bool operator!=(const IndexIterator &itr) const { return !(page_->GetPageId() == itr.page_->GetPageId() && offset_ == itr.offset_); }
+  bool operator!=(const IndexIterator &itr) const {
+    return !(page_->GetPageId() == itr.page_->GetPageId() && offset_ == itr.offset_);
+  }
 
  private:
   // add your own private member variables here

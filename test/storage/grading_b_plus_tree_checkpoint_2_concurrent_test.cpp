@@ -122,10 +122,9 @@ void LookupHelper(BPlusTree<GenericKey<8>, RID, GenericComparator<8>> *tree, con
   delete transaction;
 }
 
-//const size_t NUM_ITERS = 100;
+// const size_t NUM_ITERS = 100;
 
 const size_t NUM_ITERS = 1;
-
 
 void InsertTest1Call() {
   for (size_t iter = 0; iter < NUM_ITERS; iter++) {
@@ -547,7 +546,7 @@ TEST(BPlusTreeConcurrentTest, InsertTest2) {
  * Score: 5
  * Description: Concurrently delete a set of keys.
  */
-TEST(BPlusTreeConcurrentTest, DISABLED_DeleteTest1) {
+TEST(BPlusTreeConcurrentTest, DeleteTest1) {
   TEST_TIMEOUT_BEGIN
   DeleteTest1Call();
   remove("test.db");
@@ -560,7 +559,7 @@ TEST(BPlusTreeConcurrentTest, DISABLED_DeleteTest1) {
  * Description: Split the concurrent delete task to multiple threads
  * without overlap.
  */
-TEST(BPlusTreeConcurrentTest, DISABLED_DeleteTest2) {
+TEST(BPlusTreeConcurrentTest, DeleteTest2) {
   TEST_TIMEOUT_BEGIN
   DeleteTest2Call();
   remove("test.db");
@@ -575,7 +574,7 @@ TEST(BPlusTreeConcurrentTest, DISABLED_DeleteTest2) {
  * insert different set of keys. Check if all old keys are
  * deleted and new keys are added correctly.
  */
-TEST(BPlusTreeConcurrentTest, DISABLED_MixTest1) {
+TEST(BPlusTreeConcurrentTest, MixTest1) {
   TEST_TIMEOUT_BEGIN
   MixTest1Call();
   remove("test.db");
@@ -591,7 +590,7 @@ TEST(BPlusTreeConcurrentTest, DISABLED_MixTest1) {
  * Check all the keys get are the same set of keys as previously
  * inserted.
  */
-TEST(BPlusTreeConcurrentTest, DISABLED_MixTest2) {
+TEST(BPlusTreeConcurrentTest, MixTest2) {
   TEST_TIMEOUT_BEGIN
   MixTest2Call();
   remove("test.db");
@@ -606,7 +605,7 @@ TEST(BPlusTreeConcurrentTest, DISABLED_MixTest2) {
  * insert different set of keys. Check if all old keys are
  * deleted and new keys are added correctly.
  */
-TEST(BPlusTreeConcurrentTest, DISABLED_MixTest3) {
+TEST(BPlusTreeConcurrentTest, MixTest3) {
   TEST_TIMEOUT_BEGIN
   MixTest3Call();
   remove("test.db");
@@ -633,4 +632,3 @@ TEST(BPlusTreeConcurrentTest, DISABLED_MixTest3) {
 //          up.[----------] 7 tests from BPlusTreeConcurrentTest[RUN] BPlusTreeConcurrentTest.InsertTest1 ==
 //      == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == ==
 //    =
-
