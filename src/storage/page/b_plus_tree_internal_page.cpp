@@ -142,7 +142,7 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::PopulateNewRoot(const ValueType &old_value,
 INDEX_TEMPLATE_ARGUMENTS
 int B_PLUS_TREE_INTERNAL_PAGE_TYPE::InsertNodeAfter(const ValueType &old_value, const KeyType &new_key,
                                                     const ValueType &new_value) {
-  LOG_INFO("old_val = %d, new_key = %lu, new_value = %d", old_value, new_key.ToString(), new_value);
+  // LOG_INFO("old_val = %d, new_key = %lu, new_value = %d", old_value, new_key.ToString(), new_value);
   int size = GetSize();
   int index = 0;
   bool found = false;
@@ -156,7 +156,7 @@ int B_PLUS_TREE_INTERNAL_PAGE_TYPE::InsertNodeAfter(const ValueType &old_value, 
   }
   // no value == old_value
   if (!found) {
-    LOG_INFO("not found.. val = %d", old_value);
+    // LOG_INFO("not found.. val = %d", old_value);
     return size;
   }
   // move the pairs backward
@@ -166,7 +166,7 @@ int B_PLUS_TREE_INTERNAL_PAGE_TYPE::InsertNodeAfter(const ValueType &old_value, 
   // insert the new pair
   array[index + 1] = std::make_pair(new_key, new_value);
   SetSize(size + 1);
-  LOG_INFO("found.. val = %d, index = %d, new_size = %d", old_value, index, GetSize());
+  // LOG_INFO("found.. val = %d, index = %d, new_size = %d", old_value, index, GetSize());
   return GetSize();
 }
 
@@ -185,7 +185,7 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::MoveHalfTo(BPlusTreeInternalPage *recipient
   int mid_idx = size / 2;
   recipient->CopyNFrom(&array[mid_idx], size - mid_idx, buffer_pool_manager);
   SetSize(mid_idx);
-  LOG_INFO("done, my_size = %d, recipient_size = %d", GetSize(), recipient->GetSize());
+  // LOG_INFO("done, my_size = %d, recipient_size = %d", GetSize(), recipient->GetSize());
 }
 
 /* Copy entries into me, starting from {items} and copy {size} entries.

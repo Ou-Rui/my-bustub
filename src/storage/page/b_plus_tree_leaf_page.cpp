@@ -136,11 +136,11 @@ int B_PLUS_TREE_LEAF_PAGE_TYPE::BSFirstGEIndex(const KeyType &key, const KeyComp
  */
 INDEX_TEMPLATE_ARGUMENTS
 int B_PLUS_TREE_LEAF_PAGE_TYPE::Insert(const KeyType &key, const ValueType &value, const KeyComparator &comparator) {
-  LOG_INFO("key = %lu, val = %s", key.ToString(), value.ToString().c_str());
+  // LOG_INFO("key = %lu, val = %s", key.ToString(), value.ToString().c_str());
   int size = GetSize();
   int index = BSFirstGEIndex(key, comparator);
   if (comparator(key, array[index].first) == 0) {
-    LOG_INFO("Duplicate key = %lu", key.ToString());
+    // LOG_INFO("Duplicate key = %lu", key.ToString());
     return GetSize();
   }
   // move pairs backward
@@ -150,8 +150,8 @@ int B_PLUS_TREE_LEAF_PAGE_TYPE::Insert(const KeyType &key, const ValueType &valu
   // insert kv pair, ++size
   array[index] = std::make_pair(key, value);
   SetSize(size + 1);
-  LOG_INFO("insert done.. key = %lu, val = %s, index = %d, new_size = %d", key.ToString(), value.ToString().c_str(),
-           index, GetSize());
+  // LOG_INFO("insert done.. key = %lu, val = %s, index = %d, new_size = %d", key.ToString(), value.ToString().c_str(),
+  // index, GetSize());
   return GetSize();
 }
 
@@ -171,7 +171,7 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::MoveHalfTo(BPlusTreeLeafPage *recipient) {
   recipient->CopyNFrom(&array[mid_idx], size - mid_idx);
 
   SetSize(mid_idx);
-  LOG_INFO("done, my_size = %d, recipient_size = %d", GetSize(), recipient->GetSize());
+  // LOG_INFO("done, my_size = %d, recipient_size = %d", GetSize(), recipient->GetSize());
 }
 
 /*
@@ -216,17 +216,17 @@ bool B_PLUS_TREE_LEAF_PAGE_TYPE::Lookup(const KeyType &key, ValueType *value, co
 INDEX_TEMPLATE_ARGUMENTS
 int B_PLUS_TREE_LEAF_PAGE_TYPE::RemoveAndDeleteRecord(const KeyType &key, const KeyComparator &comparator) {
   int size = GetSize();
-  LOG_INFO("leaf remove key = %lu start, size = %d, page_id = %d", key.ToString(), size, GetPageId());
+  // LOG_INFO("leaf remove key = %lu start, size = %d, page_id = %d", key.ToString(), size, GetPageId());
   int index = BSEqualIndex(key, comparator);
   if (index == -1) {
-    LOG_INFO("no such key = %lu.. return", key.ToString());
+    // LOG_INFO("no such key = %lu.. return", key.ToString());
     return size;
   }
   for (int i = index; i < size; i++) {
     array[i] = array[i + 1];
   }
   SetSize(size - 1);
-  LOG_INFO("leaf remove key = %lu done, new_size = %d", key.ToString(), GetSize());
+  // LOG_INFO("leaf remove key = %lu done, new_size = %d", key.ToString(), GetSize());
   return GetSize();
 }
 
