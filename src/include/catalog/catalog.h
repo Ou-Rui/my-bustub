@@ -83,10 +83,11 @@ class Catalog {
         schema, table_name, std::move(table), next_table_oid_);
     // table identifiers -> table metadata
     tables_[next_table_oid_] = std::move(table_meta);
+    TableMetadata *new_table = tables_[next_table_oid_].get();
     // table names -> table identifiers
     names_[table_name] = next_table_oid_;
     next_table_oid_++;
-    return tables_[next_table_oid_].get();
+    return new_table;
   }
 
   /** @return table metadata by name */
@@ -122,17 +123,20 @@ class Catalog {
                          size_t keysize) {
     BUSTUB_ASSERT(index_names_.count(index_name) == 0, "Index names should be unique!");
     auto index_meta = std::make_unique<IndexMetadata>(
-        index_name, table_name, key_schema, key_attrs);
-    auto index = std::make_unique<Index>(std::move(index_meta));
+        index_name, table_name, &schema, key_attrs);
+    auto bplustree_index = std::make_unique<BPlusTreeIndex<KeyType, ValueType, KeyComparator>>(
+        index_meta.get(), bpm_);
+
     auto index_info = std::make_unique<IndexInfo>(
-        key_schema, index_name, std::move(index), next_index_oid_, table_name, keysize);
+        key_schema, index_name, std::move(bplustree_index), next_index_oid_, table_name, keysize);
 
     // index identifiers -> index metadata
     indexes_[next_index_oid_] = std::move(index_info);
+    IndexInfo *new_index = indexes_[next_index_oid_].get();
     // table name -> index names -> index identifiers
     index_names_[table_name][index_name] = next_index_oid_;
     next_index_oid_++;
-    return indexes_[next_index_oid_].get();
+    return new_index;
   }
 
   IndexInfo *GetIndex(const std::string &index_name, const std::string &table_name) {
