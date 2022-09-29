@@ -139,8 +139,8 @@ int B_PLUS_TREE_LEAF_PAGE_TYPE::Insert(const KeyType &key, const ValueType &valu
   // LOG_INFO("key = %lu, val = %s", key.ToString(), value.ToString().c_str());
   int size = GetSize();
   int index = BSFirstGEIndex(key, comparator);
-  if (comparator(key, array[index].first) == 0) {
-    // LOG_INFO("Duplicate key = %lu", key.ToString());
+  if (size != 0 && comparator(key, array[index].first) == 0) {
+     LOG_INFO("Duplicate key = %lu", key.ToString());
     return GetSize();
   }
   // move pairs backward

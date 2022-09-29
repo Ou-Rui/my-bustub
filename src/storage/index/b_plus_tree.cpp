@@ -108,6 +108,7 @@ void BPLUSTREE_TYPE::StartNewTree(const KeyType &key, const ValueType &value) {
   root_node->SetNextPageId(INVALID_PAGE_ID);
 
   // insert first key
+//  root_node->Insert(key, value, comparator_);
   int size = root_node->GetSize();
   int new_size = root_node->Insert(key, value, comparator_);
   assert(size + 1 == new_size);

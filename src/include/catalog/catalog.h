@@ -122,16 +122,26 @@ class Catalog {
                          const Schema &schema, const Schema &key_schema, const std::vector<uint32_t> &key_attrs,
                          size_t keysize) {
     BUSTUB_ASSERT(index_names_.count(index_name) == 0, "Index names should be unique!");
-    auto index_meta = std::make_unique<IndexMetadata>(
-        index_name, table_name, &schema, key_attrs);
+    auto index_meta = new IndexMetadata(index_name, table_name, &schema, key_attrs);
     auto bplustree_index = std::make_unique<BPlusTreeIndex<KeyType, ValueType, KeyComparator>>(
-        index_meta.get(), bpm_);
+        index_meta, bpm_);
 
-    auto index_info = std::make_unique<IndexInfo>(
-        key_schema, index_name, std::move(bplustree_index), next_index_oid_, table_name, keysize);
+    // populate all tuples in the table into the created index
+    auto table_metadata = GetTable(table_name);
+    auto table_iter = table_metadata->table_->Begin(txn);
+    while (table_iter != table_metadata->table_->End()) {
+      auto table_tuple = *table_iter;
+      auto rid = table_tuple.GetRid();
+      Tuple index_tuple = table_tuple.KeyFromTuple(schema, key_schema, key_attrs);
+      bplustree_index->InsertEntry(index_tuple, rid, txn);
+      table_iter++;
+    }
+
+    auto index_info = new IndexInfo(key_schema, index_name, std::move(bplustree_index),
+                                    next_index_oid_, table_name, keysize);
 
     // index identifiers -> index metadata
-    indexes_[next_index_oid_] = std::move(index_info);
+    indexes_[next_index_oid_] = std::unique_ptr<IndexInfo>(index_info);
     IndexInfo *new_index = indexes_[next_index_oid_].get();
     // table name -> index names -> index identifiers
     index_names_[table_name][index_name] = next_index_oid_;
