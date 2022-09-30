@@ -49,12 +49,10 @@ class InsertExecutor : public AbstractExecutor {
   const InsertPlanNode *plan_;
 
   std::unique_ptr<AbstractExecutor> child_executor_;
-  TableHeap *table_heap_;
-  Schema table_schema_;
+  TableMetadata *table_info_;
   std::vector<BPlusTreeIndex<GenericKey<8>, RID, GenericComparator<8>> *> indexes_;
 
   void InsertOne_(const std::vector<Value> &values, RID *rid, Transaction *txn);
 
-  std::unique_ptr<AbstractExecutor> GetChildExecutor_();
 };
 }  // namespace bustub

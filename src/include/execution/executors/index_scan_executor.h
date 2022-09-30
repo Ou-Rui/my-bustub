@@ -48,7 +48,7 @@ class IndexScanExecutor : public AbstractExecutor {
 
   BPlusTreeIndex<GenericKey<8>, RID, GenericComparator<8>> *index_;
   IndexIterator<GenericKey<8>, RID, GenericComparator<8>> index_iter_;
-  TableHeap *table_heap_;
+  TableMetadata *table_info_;
 
 };
 }  // namespace bustub

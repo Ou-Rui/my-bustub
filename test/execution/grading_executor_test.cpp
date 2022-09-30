@@ -202,7 +202,7 @@ TEST_F(GradingExecutorTest, SimpleIndexScanTest) {
 }
 
 // NOLINTNEXTLINE
-TEST_F(GradingExecutorTest, DISABLED_SimpleRawInsertWithIndexTest) {
+TEST_F(GradingExecutorTest, SimpleRawInsertWithIndexTest) {
   // INSERT INTO empty_table2 VALUES (200, 20), (201, 21), (202, 22)
   // Create Values to insert
   std::vector<Value> val1{ValueFactory::GetIntegerValue(200), ValueFactory::GetIntegerValue(20)};
@@ -263,7 +263,7 @@ TEST_F(GradingExecutorTest, DISABLED_SimpleRawInsertWithIndexTest) {
 }
 
 // NOLINTNEXTLINE
-TEST_F(GradingExecutorTest, DISABLED_SimpleSelectInsertTest) {
+TEST_F(GradingExecutorTest, SimpleSelectInsertTest) {
   // INSERT INTO empty_table2 SELECT colA, colB FROM test_1 WHERE colA > 500
   std::unique_ptr<AbstractPlanNode> scan_plan1;
   const Schema *out_schema1;
@@ -334,7 +334,7 @@ TEST_F(GradingExecutorTest, DISABLED_SimpleSelectInsertTest) {
 }
 
 // NOLINTNEXTLINE
-TEST_F(GradingExecutorTest, DISABLED_SimpleUpdateTest) {
+TEST_F(GradingExecutorTest, SimpleUpdateTest) {
   // INSERT INTO empty_table2 SELECT colA, colA FROM test_1 WHERE colA < 50
   // UPDATE empty_table2 SET colA = colA+10 WHERE colA < 50
   std::unique_ptr<AbstractPlanNode> scan_plan1;

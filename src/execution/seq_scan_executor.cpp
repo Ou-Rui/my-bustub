@@ -15,18 +15,18 @@ namespace bustub {
 
 SeqScanExecutor::SeqScanExecutor(ExecutorContext *exec_ctx, const SeqScanPlanNode *plan)
     : AbstractExecutor(exec_ctx),
-      plan_(plan), table_heap_(),
-      iter_(nullptr, RID(), nullptr) {}
+      plan_(plan),
+      table_info_(),
+      iter_(nullptr, RID(), nullptr)
+{}
 
 void SeqScanExecutor::Init() {
-  auto table_metadata = GetExecutorContext()->GetCatalog()->GetTable(plan_->GetTableOid());
-  table_heap_ = table_metadata->table_.get();
-
-  iter_ = table_metadata->table_->Begin(GetExecutorContext()->GetTransaction());
+  table_info_ = GetExecutorContext()->GetCatalog()->GetTable(plan_->GetTableOid());
+  iter_ = table_info_->table_->Begin(GetExecutorContext()->GetTransaction());
 }
 
 bool SeqScanExecutor::Next(Tuple *tuple, RID *rid) {
-  while (iter_ != table_heap_->End()) {
+  while (iter_ != table_info_->table_->End()) {
     // get original tuple, then move forward iter
     *tuple = *iter_++;
     *rid = tuple->GetRid();
@@ -35,8 +35,9 @@ bool SeqScanExecutor::Next(Tuple *tuple, RID *rid) {
         plan_->GetPredicate()->Evaluate(tuple, GetOutputSchema()).GetAs<bool>()) {
       // pack-up output values from original tuple, according to output schema
       std::vector<Value> values;
-      for (uint32_t i = 0; i < GetOutputSchema()->GetColumnCount(); i++) {
-        values.emplace_back(tuple->GetValue(GetOutputSchema(), i));
+      for (const auto &col : GetOutputSchema()->GetColumns()) {
+        Value value = col.GetExpr()->Evaluate(tuple, &(table_info_->schema_));
+        values.emplace_back(value);
       }
       // create output tuple
       Tuple res(values, GetOutputSchema());
