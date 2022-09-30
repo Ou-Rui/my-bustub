@@ -20,8 +20,7 @@ UpdateExecutor::UpdateExecutor(ExecutorContext *exec_ctx, const UpdatePlanNode *
     : AbstractExecutor(exec_ctx),
       plan_(plan),
       table_info_(),
-      child_executor_(std::move(child_executor)),
-      indexes_()
+      child_executor_(std::move(child_executor))
 {}
 
 void UpdateExecutor::Init() {

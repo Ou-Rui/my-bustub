@@ -409,7 +409,7 @@ TEST_F(GradingExecutorTest, SimpleUpdateTest) {
 }
 
 // NOLINTNEXTLINE
-TEST_F(GradingExecutorTest, DISABLED_SimpleDeleteTest) {
+TEST_F(GradingExecutorTest, SimpleDeleteTest) {
   // SELECT colA FROM test_1 WHERE colA < 50
   // DELETE FROM test_1 WHERE colA < 50
   // SELECT colA FROM test_1 WHERE colA < 50

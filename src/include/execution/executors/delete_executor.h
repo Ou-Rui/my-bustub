@@ -51,5 +51,8 @@ class DeleteExecutor : public AbstractExecutor {
   const DeletePlanNode *plan_;
   /** The child executor to obtain rid from. */
   std::unique_ptr<AbstractExecutor> child_executor_;
+
+  TableMetadata *table_info_;
+  std::vector<BPlusTreeIndex<GenericKey<8>, RID, GenericComparator<8>> *> indexes_;
 };
 }  // namespace bustub
