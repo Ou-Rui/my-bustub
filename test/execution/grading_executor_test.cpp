@@ -457,7 +457,7 @@ TEST_F(GradingExecutorTest, SimpleDeleteTest) {
 }
 
 // NOLINTNEXTLINE
-TEST_F(GradingExecutorTest, DISABLED_SimpleNestedLoopJoinTest) {
+TEST_F(GradingExecutorTest, SimpleNestedLoopJoinTest) {
   // SELECT test_1.colA, test_1.colB, test_2.col1, test_2.col3 FROM test_1 JOIN test_2 ON test_1.colA = test_2.col1 AND
   // test_1.colA < 50
   std::unique_ptr<AbstractPlanNode> scan_plan1;
