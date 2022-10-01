@@ -613,7 +613,7 @@ TEST_F(GradingExecutorTest, DISABLED_SimpleGroupByAggregation) {
 }
 
 // NOLINTNEXTLINE
-TEST_F(GradingExecutorTest, DISABLED_SimpleNestedIndexJoinTest) {
+TEST_F(GradingExecutorTest, SimpleNestedIndexJoinTest) {
   // SELECT test_1.colA, test_1.colB, test_3.col1, test_3.col3 FROM test_1 JOIN test_3 ON test_1.colA = test_3.col1
   std::unique_ptr<AbstractPlanNode> scan_plan1;
   const Schema *outer_schema1;

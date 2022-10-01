@@ -150,7 +150,7 @@ class Catalog {
   }
 
   IndexInfo *GetIndex(const std::string &index_name, const std::string &table_name) {
-    if (index_names_.count(index_name) == 0) {
+    if (index_names_.count(table_name) == 0) {
       throw std::out_of_range("table have no index");
     }
     if (index_names_[table_name].count(index_name) == 0) {
