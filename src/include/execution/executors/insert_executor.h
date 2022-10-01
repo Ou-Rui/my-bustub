@@ -12,6 +12,7 @@
 
 #pragma once
 
+#include <vector>
 #include <memory>
 #include <utility>
 
@@ -53,6 +54,5 @@ class InsertExecutor : public AbstractExecutor {
   std::vector<BPlusTreeIndex<GenericKey<8>, RID, GenericComparator<8>> *> indexes_;
 
   void InsertOne_(const std::vector<Value> &values, RID *rid, Transaction *txn);
-
 };
 }  // namespace bustub

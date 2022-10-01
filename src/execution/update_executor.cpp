@@ -17,20 +17,14 @@ namespace bustub {
 
 UpdateExecutor::UpdateExecutor(ExecutorContext *exec_ctx, const UpdatePlanNode *plan,
                                std::unique_ptr<AbstractExecutor> &&child_executor)
-    : AbstractExecutor(exec_ctx),
-      plan_(plan),
-      table_info_(),
-      child_executor_(std::move(child_executor))
-{}
+    : AbstractExecutor(exec_ctx), plan_(plan), table_info_(), child_executor_(std::move(child_executor)) {}
 
 void UpdateExecutor::Init() {
   table_info_ = GetExecutorContext()->GetCatalog()->GetTable(plan_->TableOid());
 
-  auto indexes_info = GetExecutorContext()->GetCatalog()->GetTableIndexes(
-      table_info_->name_);
+  auto indexes_info = GetExecutorContext()->GetCatalog()->GetTableIndexes(table_info_->name_);
   for (auto index_info : indexes_info) {
-    auto index = reinterpret_cast<BPlusTreeIndex<GenericKey<8>, RID, GenericComparator<8>> *>(
-        index_info->index_.get());
+    auto index = reinterpret_cast<BPlusTreeIndex<GenericKey<8>, RID, GenericComparator<8>> *>(index_info->index_.get());
     indexes_.emplace_back(index);
   }
 }
@@ -46,20 +40,16 @@ bool UpdateExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) {
   return false;
 }
 
-void UpdateExecutor::UpdateOne_(Tuple old_tuple, Tuple updated_tuple,
-                                const RID &rid, Transaction *txn) {
+void UpdateExecutor::UpdateOne_(Tuple old_tuple, Tuple updated_tuple, const RID &rid, Transaction *txn) {
   table_info_->table_->UpdateTuple(updated_tuple, rid, txn);
   // Update Indexes
   for (auto index : indexes_) {
     // Delete Old
-    Tuple old_index_tuple = old_tuple.KeyFromTuple(table_info_->schema_,
-                                                   *index->GetKeySchema(),
-                                                   index->GetKeyAttrs());
+    Tuple old_index_tuple = old_tuple.KeyFromTuple(table_info_->schema_, *index->GetKeySchema(), index->GetKeyAttrs());
     index->DeleteEntry(old_index_tuple, rid, txn);
     // Insert New
-    Tuple updated_index_tuple = updated_tuple.KeyFromTuple(table_info_->schema_,
-                                                   *index->GetKeySchema(),
-                                                   index->GetKeyAttrs());
+    Tuple updated_index_tuple =
+        updated_tuple.KeyFromTuple(table_info_->schema_, *index->GetKeySchema(), index->GetKeyAttrs());
     index->InsertEntry(updated_index_tuple, rid, txn);
   }
 }

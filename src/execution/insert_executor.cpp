@@ -20,22 +20,14 @@ namespace bustub {
 
 InsertExecutor::InsertExecutor(ExecutorContext *exec_ctx, const InsertPlanNode *plan,
                                std::unique_ptr<AbstractExecutor> &&child_executor)
-    : AbstractExecutor(exec_ctx),
-      plan_(plan),
-      child_executor_(std::move(child_executor)),
-      table_info_(),
-      indexes_()
-{}
+    : AbstractExecutor(exec_ctx), plan_(plan), child_executor_(std::move(child_executor)), table_info_() {}
 
 void InsertExecutor::Init() {
-  table_info_ = GetExecutorContext()->GetCatalog()->GetTable(
-      plan_->TableOid());
+  table_info_ = GetExecutorContext()->GetCatalog()->GetTable(plan_->TableOid());
 
-  auto indexes_info = GetExecutorContext()->GetCatalog()->GetTableIndexes(
-      table_info_->name_);
+  auto indexes_info = GetExecutorContext()->GetCatalog()->GetTableIndexes(table_info_->name_);
   for (auto index_info : indexes_info) {
-    auto index = reinterpret_cast<BPlusTreeIndex<GenericKey<8>, RID, GenericComparator<8>> *>(
-        index_info->index_.get());
+    auto index = reinterpret_cast<BPlusTreeIndex<GenericKey<8>, RID, GenericComparator<8>> *>(index_info->index_.get());
     indexes_.emplace_back(index);
   }
 }
@@ -44,7 +36,7 @@ bool InsertExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) {
   if (plan_->IsRawInsert()) {
     // raw insert, get values from PlanNode
     auto values_list = plan_->RawValues();
-    for (const auto& values : values_list) {
+    for (const auto &values : values_list) {
       InsertOne_(values, rid, GetExecutorContext()->GetTransaction());
     }
   } else {
@@ -69,12 +61,9 @@ void InsertExecutor::InsertOne_(const std::vector<Value> &values, RID *rid, Tran
   table_info_->table_->InsertTuple(table_tuple, rid, txn);
   // insert into indexes
   for (auto index : indexes_) {
-    Tuple index_tuple = table_tuple.KeyFromTuple(table_info_->schema_,
-                                                 *index->GetKeySchema(),
-                                                 index->GetKeyAttrs());
+    Tuple index_tuple = table_tuple.KeyFromTuple(table_info_->schema_, *index->GetKeySchema(), index->GetKeyAttrs());
     index->InsertEntry(index_tuple, *rid, txn);
   }
 }
-
 
 }  // namespace bustub

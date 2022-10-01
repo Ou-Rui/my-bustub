@@ -12,6 +12,7 @@
 
 #pragma once
 
+#include <vector>
 #include <memory>
 #include <utility>
 
@@ -56,6 +57,5 @@ class NestedLoopJoinExecutor : public AbstractExecutor {
   uint64_t idx_{0};
 
   void ExecuteChild_(AbstractExecutor *child_exec, std::vector<Tuple> *tuples);
-
 };
 }  // namespace bustub

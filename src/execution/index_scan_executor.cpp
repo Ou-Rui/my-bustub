@@ -13,34 +13,26 @@
 
 namespace bustub {
 IndexScanExecutor::IndexScanExecutor(ExecutorContext *exec_ctx, const IndexScanPlanNode *plan)
-    : AbstractExecutor(exec_ctx),
-      plan_(plan),
-      index_(),
-      index_iter_(nullptr, nullptr, 0),
-      table_info_()
-{}
+    : AbstractExecutor(exec_ctx), plan_(plan), index_(), index_iter_(nullptr, nullptr, 0), table_info_() {}
 
 void IndexScanExecutor::Init() {
-  auto index_info = GetExecutorContext()->GetCatalog()->GetIndex(
-      plan_->GetIndexOid());
+  auto index_info = GetExecutorContext()->GetCatalog()->GetIndex(plan_->GetIndexOid());
   auto index = index_info->index_.get();
   index_ = reinterpret_cast<BPlusTreeIndex<GenericKey<8>, RID, GenericComparator<8>> *>(index);
   index_iter_ = index_->GetBeginIterator();
-  table_info_ = GetExecutorContext()->GetCatalog()->GetTable(
-      index_info->table_name_);
+  table_info_ = GetExecutorContext()->GetCatalog()->GetTable(index_info->table_name_);
 }
 
 bool IndexScanExecutor::Next(Tuple *tuple, RID *rid) {
   while (!index_iter_.isEnd()) {
     *rid = (*index_iter_).second;
     ++index_iter_;
-    if (!table_info_->table_->GetTuple(
-            *rid, tuple, GetExecutorContext()->GetTransaction())) {
+    if (!table_info_->table_->GetTuple(*rid, tuple, GetExecutorContext()->GetTransaction())) {
       std::cout << "RID Not Found??" << rid->ToString() << std::endl;
       return false;
     }
     // evaluate predicate
-    if (plan_->GetPredicate() == nullptr ||     // no predicate
+    if (plan_->GetPredicate() == nullptr ||  // no predicate
         plan_->GetPredicate()->Evaluate(tuple, GetOutputSchema()).GetAs<bool>()) {
       // pack-up output values from original tuple, according to output schema
       std::vector<Value> values;
@@ -52,7 +44,7 @@ bool IndexScanExecutor::Next(Tuple *tuple, RID *rid) {
       Tuple res(values, GetOutputSchema());
       *tuple = res;
       return true;
-    }   // end of evaluate predicate
+    }  // end of evaluate predicate
   }
 
   return false;

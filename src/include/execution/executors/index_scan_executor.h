@@ -18,8 +18,8 @@
 #include "execution/executor_context.h"
 #include "execution/executors/abstract_executor.h"
 #include "execution/plans/index_scan_plan.h"
-#include "storage/table/tuple.h"
 #include "storage/index/index_iterator.h"
+#include "storage/table/tuple.h"
 
 namespace bustub {
 
@@ -49,6 +49,5 @@ class IndexScanExecutor : public AbstractExecutor {
   BPlusTreeIndex<GenericKey<8>, RID, GenericComparator<8>> *index_;
   IndexIterator<GenericKey<8>, RID, GenericComparator<8>> index_iter_;
   TableMetadata *table_info_;
-
 };
 }  // namespace bustub

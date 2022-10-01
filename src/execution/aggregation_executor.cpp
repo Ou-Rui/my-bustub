@@ -46,8 +46,7 @@ bool AggregationExecutor::Next(Tuple *tuple, RID *rid) {
     ++aht_iterator_;
     // Having Clause
     if (plan_->GetHaving() == nullptr ||
-        plan_->GetHaving()->EvaluateAggregate(agg_key.group_bys_, agg_val.aggregates_)
-            .GetAs<bool>()) {
+        plan_->GetHaving()->EvaluateAggregate(agg_key.group_bys_, agg_val.aggregates_).GetAs<bool>()) {
       std::vector<Value> values;
       for (const auto &col : GetOutputSchema()->GetColumns()) {
         Value value = col.GetExpr()->EvaluateAggregate(agg_key.group_bys_, agg_val.aggregates_);

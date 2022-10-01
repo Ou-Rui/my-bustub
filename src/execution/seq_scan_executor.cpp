@@ -14,11 +14,7 @@
 namespace bustub {
 
 SeqScanExecutor::SeqScanExecutor(ExecutorContext *exec_ctx, const SeqScanPlanNode *plan)
-    : AbstractExecutor(exec_ctx),
-      plan_(plan),
-      table_info_(),
-      iter_(nullptr, RID(), nullptr)
-{}
+    : AbstractExecutor(exec_ctx), plan_(plan), table_info_(), iter_(nullptr, RID(), nullptr) {}
 
 void SeqScanExecutor::Init() {
   table_info_ = GetExecutorContext()->GetCatalog()->GetTable(plan_->GetTableOid());
@@ -31,7 +27,7 @@ bool SeqScanExecutor::Next(Tuple *tuple, RID *rid) {
     *tuple = *iter_++;
     *rid = tuple->GetRid();
     // evaluate predicate
-    if (plan_->GetPredicate() == nullptr ||     // no predicate
+    if (plan_->GetPredicate() == nullptr ||  // no predicate
         plan_->GetPredicate()->Evaluate(tuple, GetOutputSchema()).GetAs<bool>()) {
       // pack-up output values from original tuple, according to output schema
       std::vector<Value> values;

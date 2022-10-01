@@ -3,9 +3,10 @@
 # Project3 Query Execution
 ## 22.9.13
 - PASS catalog_test
+- PASS autograder
 
-
-
+## 22.10.1
+- PASS grading_executor_test.cpp
 
 # Project2 B+Tree
 ## 22.7.20

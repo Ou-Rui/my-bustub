@@ -20,18 +20,13 @@ NestIndexJoinExecutor::NestIndexJoinExecutor(ExecutorContext *exec_ctx, const Ne
       plan_(plan),
       child_executor_(std::move(child_executor)),
       inner_table_info_(),
-      inner_index_()
-{}
+      inner_index_() {}
 
 void NestIndexJoinExecutor::Init() {
   // Init Executor Metadata
-  inner_table_info_ = GetExecutorContext()->GetCatalog()
-                          ->GetTable(plan_->GetInnerTableOid());
-  auto index_info = GetExecutorContext()->GetCatalog()
-                        ->GetIndex(plan_->GetIndexName(),
-                                   inner_table_info_->name_);
-  inner_index_ = static_cast<BPlusTreeIndex<GenericKey<8>, RID, GenericComparator<8>> *>(
-      index_info->index_.get());
+  inner_table_info_ = GetExecutorContext()->GetCatalog()->GetTable(plan_->GetInnerTableOid());
+  auto index_info = GetExecutorContext()->GetCatalog()->GetIndex(plan_->GetIndexName(), inner_table_info_->name_);
+  inner_index_ = static_cast<BPlusTreeIndex<GenericKey<8>, RID, GenericComparator<8>> *>(index_info->index_.get());
 
   // Get OuterTuples
   auto txn = GetExecutorContext()->GetTransaction();
@@ -41,8 +36,7 @@ void NestIndexJoinExecutor::Init() {
   for (auto &outer_tuple : outer_tuples) {
     // find the value of index's key, lhs of the predicate
     // ASSUME: lhs is Single ColumnValueExpression
-    auto key_value = plan_->Predicate()->GetChildAt(0)
-                         ->Evaluate(&outer_tuple, child_executor_->GetOutputSchema());
+    auto key_value = plan_->Predicate()->GetChildAt(0)->Evaluate(&outer_tuple, child_executor_->GetOutputSchema());
     Tuple key_tuple(std::vector<Value>{key_value}, inner_index_->GetKeySchema());
     std::vector<RID> inner_rids;
     // NOTE: ONLY for ComparisonType::Equal
@@ -55,9 +49,7 @@ void NestIndexJoinExecutor::Init() {
       // pack-up output tuple
       std::vector<Value> values;
       for (const auto &col : GetOutputSchema()->GetColumns()) {
-        Value value = col.GetExpr()->EvaluateJoin(&outer_tuple,
-                                                  child_executor_->GetOutputSchema(),
-                                                  &inner_tuple,
+        Value value = col.GetExpr()->EvaluateJoin(&outer_tuple, child_executor_->GetOutputSchema(), &inner_tuple,
                                                   &inner_table_info_->schema_);
         values.emplace_back(value);
       }

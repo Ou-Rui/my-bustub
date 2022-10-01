@@ -77,10 +77,8 @@ class Catalog {
    */
   TableMetadata *CreateTable(Transaction *txn, const std::string &table_name, const Schema &schema) {
     BUSTUB_ASSERT(names_.count(table_name) == 0, "Table names should be unique!");
-    auto table = std::make_unique<TableHeap>(
-        bpm_, lock_manager_, log_manager_, txn);
-    auto table_meta = std::make_unique<TableMetadata>(
-        schema, table_name, std::move(table), next_table_oid_);
+    auto table = std::make_unique<TableHeap>(bpm_, lock_manager_, log_manager_, txn);
+    auto table_meta = std::make_unique<TableMetadata>(schema, table_name, std::move(table), next_table_oid_);
     // table identifiers -> table metadata
     tables_[next_table_oid_] = std::move(table_meta);
     TableMetadata *new_table = tables_[next_table_oid_].get();
@@ -123,8 +121,7 @@ class Catalog {
                          size_t keysize) {
     BUSTUB_ASSERT(index_names_.count(index_name) == 0, "Index names should be unique!");
     auto index_meta = new IndexMetadata(index_name, table_name, &schema, key_attrs);
-    auto bplustree_index = std::make_unique<BPlusTreeIndex<KeyType, ValueType, KeyComparator>>(
-        index_meta, bpm_);
+    auto bplustree_index = std::make_unique<BPlusTreeIndex<KeyType, ValueType, KeyComparator>>(index_meta, bpm_);
 
     // populate all tuples in the table into the created index
     auto table_metadata = GetTable(table_name);
@@ -137,8 +134,8 @@ class Catalog {
       table_iter++;
     }
 
-    auto index_info = new IndexInfo(key_schema, index_name, std::move(bplustree_index),
-                                    next_index_oid_, table_name, keysize);
+    auto index_info =
+        new IndexInfo(key_schema, index_name, std::move(bplustree_index), next_index_oid_, table_name, keysize);
 
     // index identifiers -> index metadata
     indexes_[next_index_oid_] = std::unique_ptr<IndexInfo>(index_info);
@@ -168,7 +165,7 @@ class Catalog {
 
   std::vector<IndexInfo *> GetTableIndexes(const std::string &table_name) {
     std::vector<IndexInfo *> indexes;
-    for (const auto& pair : index_names_[table_name]) {
+    for (const auto &pair : index_names_[table_name]) {
       indexes.emplace_back(indexes_[pair.second].get());
     }
     return indexes;
