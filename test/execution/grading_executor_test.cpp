@@ -510,7 +510,7 @@ TEST_F(GradingExecutorTest, SimpleNestedLoopJoinTest) {
 }
 
 // NOLINTNEXTLINE
-TEST_F(GradingExecutorTest, DISABLED_SimpleAggregationTest) {
+TEST_F(GradingExecutorTest, SimpleAggregationTest) {
   // SELECT COUNT(colA), SUM(colA), min(colA), max(colA) from test_1;
   std::unique_ptr<AbstractPlanNode> scan_plan;
   const Schema *scan_schema;
@@ -558,7 +558,7 @@ TEST_F(GradingExecutorTest, DISABLED_SimpleAggregationTest) {
 }
 
 // NOLINTNEXTLINE
-TEST_F(GradingExecutorTest, DISABLED_SimpleGroupByAggregation) {
+TEST_F(GradingExecutorTest, SimpleGroupByAggregation) {
   // SELECT count(colA), colB, sum(colC) FROM test_1 Group By colB HAVING count(colA) > 100
   std::unique_ptr<AbstractPlanNode> scan_plan;
   const Schema *scan_schema;
@@ -679,7 +679,7 @@ TEST_F(GradingExecutorTest, SimpleNestedIndexJoinTest) {
 }
 
 // NOLINTNEXTLINE
-TEST_F(GradingExecutorTest, DISABLED_SchemaChangeSeqScan) {
+TEST_F(GradingExecutorTest, SchemaChangeSeqScan) {
   // INSERT INTO empty_table2 SELECT colA, colB FROM test_1 WHERE colA > 600
   // compare: SELECT colA as outA, colB as outB FROM empty_table2
   std::unique_ptr<AbstractPlanNode> scan_plan1;
@@ -734,7 +734,7 @@ TEST_F(GradingExecutorTest, DISABLED_SchemaChangeSeqScan) {
   }
 }
 
-TEST_F(GradingExecutorTest, DISABLED_IntegratedTest) {
+TEST_F(GradingExecutorTest, IntegratedTest) {
   // scan -> join -> aggregate
   std::unique_ptr<AbstractPlanNode> scan_plan1;
   const Schema *out_schema1;
