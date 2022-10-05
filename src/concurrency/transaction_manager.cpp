@@ -22,8 +22,11 @@ namespace bustub {
 
 std::unordered_map<txn_id_t, Transaction *> TransactionManager::txn_map = {};
 
+// Default isolation_level = IsolationLevel::REPEATABLE_READ
 Transaction *TransactionManager::Begin(Transaction *txn, IsolationLevel isolation_level) {
   // Acquire the global transaction latch in shared mode.
+  // NOTE: no global_txn_latch_.RUnlock() in Begin()
+  //       unlock when Commit()/Abort()
   global_txn_latch_.RLock();
 
   if (txn == nullptr) {

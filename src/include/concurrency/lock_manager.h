@@ -22,6 +22,7 @@
 #include <vector>
 
 #include "common/rid.h"
+#include "common/logger.h"
 #include "concurrency/transaction.h"
 
 namespace bustub {
@@ -36,11 +37,11 @@ class LockManager {
 
   class LockRequest {
    public:
-    LockRequest(txn_id_t txn_id, LockMode lock_mode) : txn_id_(txn_id), lock_mode_(lock_mode), granted_(false) {}
+    LockRequest(txn_id_t txn_id, LockMode lock_mode) : txn_id_(txn_id), lock_mode_(lock_mode) {}
 
     txn_id_t txn_id_;
     LockMode lock_mode_;
-    bool granted_;
+    bool granted_{false};
   };
 
   class LockRequestQueue {
@@ -140,6 +141,14 @@ class LockManager {
   std::unordered_map<RID, LockRequestQueue> lock_table_;
   /** Waits-for graph representation. */
   std::unordered_map<txn_id_t, std::vector<txn_id_t>> waits_for_;
+  /** Lock Map, Trace all held locks, RID --> S-LOCK or W-LOCK*/
+  std::unordered_map<RID, LockMode> lock_map_;
+
+  /** Called when Unlock(rid)*/
+  void GrantLockRequestQueue_(const RID &rid);
+
+  bool Granted_(const txn_id_t &txn_id, const RID &rid);
+
 };
 
 }  // namespace bustub

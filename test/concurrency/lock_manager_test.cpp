@@ -38,6 +38,8 @@ void BasicTest1() {
 
   std::vector<RID> rids;
   std::vector<Transaction *> txns;
+  // start 10 txns
+  // NOTE: IsolationLevel = Default = IsolationLevel::REPEATABLE_READ
   int num_rids = 10;
   for (int i = 0; i < num_rids; i++) {
     RID rid{i, static_cast<uint32_t>(i)};
@@ -45,15 +47,16 @@ void BasicTest1() {
     txns.push_back(txn_mgr.Begin());
     EXPECT_EQ(i, txns[i]->GetTransactionId());
   }
-  // test
-
+  // test thread, each thread for one specific TXN
   auto task = [&](int txn_id) {
     bool res;
+    // S-Lock 10 RIDs
     for (const RID &rid : rids) {
       res = lock_mgr.LockShared(txns[txn_id], rid);
       EXPECT_TRUE(res);
       CheckGrowing(txns[txn_id]);
     }
+    // Unlock all
     for (const RID &rid : rids) {
       res = lock_mgr.Unlock(txns[txn_id], rid);
       EXPECT_TRUE(res);

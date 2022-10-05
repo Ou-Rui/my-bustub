@@ -129,7 +129,7 @@ class TransactionAbortException : public std::exception {
                " aborted because it can not take locks in the shrinking state\n";
       case AbortReason::UNLOCK_ON_SHRINKING:
         return "Transaction " + std::to_string(txn_id_) +
-               " aborted because it can not excute unlock in the shrinking state\n";
+               " aborted because it can not execute unlock in the shrinking state\n";
       case AbortReason::UPGRADE_CONFLICT:
         return "Transaction " + std::to_string(txn_id_) +
                " aborted because another transaction is already waiting to upgrade its lock\n";

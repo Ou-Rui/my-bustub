@@ -1,4 +1,6 @@
-
+# Project4 Concurrency Control
+## 22.10.05
+- PASS grading_lock_manager_test_1.cpp BasicTest
 
 # Project3 Query Execution
 ## 22.9.13

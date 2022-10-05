@@ -39,10 +39,14 @@ class ReaderWriterLatch {
    */
   void WLock() {
     std::unique_lock<mutex_t> latch(mutex_);
+    // Use reader_.wait() to wait for previous writer exit
+    // since WUnlock() will reader_.notify_all()
     while (writer_entered_) {
       reader_.wait(latch);
     }
+    // current writer enter, not allow more reader enter (RLock())
     writer_entered_ = true;
+    // wait for all readers exit
     while (reader_count_ > 0) {
       writer_.wait(latch);
     }
@@ -62,6 +66,7 @@ class ReaderWriterLatch {
    */
   void RLock() {
     std::unique_lock<mutex_t> latch(mutex_);
+    // if writer entered, not allow more reader enter
     while (writer_entered_ || reader_count_ == MAX_READERS) {
       reader_.wait(latch);
     }
