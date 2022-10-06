@@ -59,6 +59,7 @@ bool LockManager::LockShared(Transaction *txn, const RID &rid) {
            Granted_(txn->GetTransactionId(), rid)) {
       lock_table_[rid].cv_.wait(guard);
     }
+    EraseLockRequest_(txn->GetTransactionId(), rid);
   }
   if (txn->GetState() == TransactionState::ABORTED) {
     LOG_INFO("ABORTED after wakeup, txn_id = %d, rid = %s",
@@ -107,6 +108,7 @@ bool LockManager::LockExclusive(Transaction *txn, const RID &rid) {
            Granted_(txn->GetTransactionId(), rid)) {
       lock_table_[rid].cv_.wait(guard);
     }
+    EraseLockRequest_(txn->GetTransactionId(), rid);
   }
   if (txn->GetState() == TransactionState::ABORTED) {
     LOG_INFO("ABORTED after wakeup, txn_id = %d, rid = %s",
@@ -120,6 +122,56 @@ bool LockManager::LockExclusive(Transaction *txn, const RID &rid) {
 }
 
 bool LockManager::LockUpgrade(Transaction *txn, const RID &rid) {
+  // Error, Lock on SHRINKING
+  if (txn->GetState() == TransactionState::SHRINKING) {
+    txn->SetState(TransactionState::ABORTED);
+    throw TransactionAbortException(
+        txn->GetTransactionId(), AbortReason::LOCK_ON_SHRINKING);
+  }
+  // Already ABORTED
+  if (txn->GetState() == TransactionState::ABORTED) {
+    LOG_INFO("already ABORTED, txn_id = %d, rid = %s",
+             txn->GetTransactionId(), rid.ToString().c_str());
+    return false;
+  }
+  LOG_INFO("TXN %d, rid = %s, state = %s",
+           txn->GetTransactionId(), rid.ToString().c_str(),
+           TxnStateToString_(txn->GetState()).c_str());
+  BUSTUB_ASSERT(txn->GetState() == TransactionState::GROWING, "Unexpected TXN State..");
+  // TXN must hold the S-Lock
+  BUSTUB_ASSERT(txn->IsSharedLocked(rid), "No S-Lock, cannot Upgrade");
+  // TXN must NOT hold W-Lock
+  BUSTUB_ASSERT(!txn->IsExclusiveLocked(rid), "Already hold X-Lock, cannot Upgrade");
+
+  std::unique_lock<std::mutex> guard(latch_);
+
+  LockRequestQueue &lrq = lock_table_[rid];
+  // Upgrade Conflict: Only one TXN can UpgradeLock
+  if (lrq.upgrading_) {
+    txn->SetState(TransactionState::ABORTED);
+    throw TransactionAbortException(
+        txn->GetTransactionId(), AbortReason::UPGRADE_CONFLICT);
+  }
+  // if someone holds X/S-Lock, block until granted
+  if (lock_map_.count(rid) != 0) {
+    lrq.upgrading_ = true;
+    LockRequest lock_request{txn->GetTransactionId(), LockMode::EXCLUSIVE};
+    lrq.request_queue_.emplace_back(lock_request);
+    while (txn->GetState() != TransactionState::ABORTED &&
+           Granted_(txn->GetTransactionId(), rid)) {
+      lrq.cv_.wait(guard);
+    }
+    EraseLockRequest_(txn->GetTransactionId(), rid);
+    lrq.upgrading_ = false;
+  }
+  if (txn->GetState() == TransactionState::ABORTED) {
+    LOG_INFO("ABORTED after wakeup, txn_id = %d, rid = %s",
+             txn->GetTransactionId(), rid.ToString().c_str());
+    return false;
+  }
+  // if nobody held the X/S-Lock, Grant
+  lock_map_[rid] = LockMode::EXCLUSIVE;
+
   txn->GetSharedLockSet()->erase(rid);
   txn->GetExclusiveLockSet()->emplace(rid);
   return true;
@@ -135,6 +187,8 @@ bool LockManager::Unlock(Transaction *txn, const RID &rid) {
 
   // update lock_table_ & lock_map_
   GrantLockRequestQueue_(rid);
+  // wakeup all waited TXN on this tuple-lock
+  lock_table_[rid].cv_.notify_all();
   // update txn.lock_set
   txn->GetSharedLockSet()->erase(rid);
   txn->GetExclusiveLockSet()->erase(rid);
@@ -177,6 +231,16 @@ bool LockManager::Granted_(const txn_id_t &txn_id, const RID &rid) {
   }
   LOG_ERROR("NOT FOUND txn_id = %d, rid = %s", txn_id, rid.ToString().c_str());
   return false;
+}
+
+void LockManager::EraseLockRequest_(const txn_id_t &txn_id, const RID &rid) {
+  std::list<LockRequest> &queue = lock_table_[rid].request_queue_;
+  for (auto iter = queue.begin(); iter != queue.end(); iter++) {
+    if (iter->txn_id_ == txn_id) {
+      queue.erase(iter);
+      return;
+    }
+  }
 }
 
 

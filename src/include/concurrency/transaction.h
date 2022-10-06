@@ -30,7 +30,7 @@ namespace bustub {
  * Transaction states for 2PL:
  *
  *     _________________________
- *    |                         v
+ *    |          |              v
  * GROWING -> SHRINKING -> COMMITTED   ABORTED
  *    |__________|________________________^
  *

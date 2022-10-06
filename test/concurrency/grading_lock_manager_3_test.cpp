@@ -45,17 +45,17 @@ void UpgradeTest() {
   RID rid{0, 0};
   Transaction txn(0);
   txn_mgr.Begin(&txn);
-
+  // S-Lock 0
   bool res = lock_mgr.LockShared(&txn, rid);
   EXPECT_TRUE(res);
   CheckTxnLockSize(&txn, 1, 0);
   CheckGrowing(&txn);
-
+  // Upgrade 0
   res = lock_mgr.LockUpgrade(&txn, rid);
   EXPECT_TRUE(res);
   CheckTxnLockSize(&txn, 0, 1);
   CheckGrowing(&txn);
-
+  // Unlock 0
   res = lock_mgr.Unlock(&txn, rid);
   EXPECT_TRUE(res);
   CheckTxnLockSize(&txn, 0, 0);

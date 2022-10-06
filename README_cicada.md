@@ -4,6 +4,7 @@
 
 ## 22.10.06
 - PASS grading_lock_manager_test_2.cpp TwoPLTest
+- PASS grading_lock_manager_test_3.cpp UpgradeLockTest
 
 # Project3 Query Execution
 ## 22.9.13
