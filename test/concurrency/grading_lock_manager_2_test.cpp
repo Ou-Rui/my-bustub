@@ -48,22 +48,22 @@ void TwoPLTest1() {
   bool res;
   auto txn = txn_mgr.Begin();
   EXPECT_EQ(0, txn->GetTransactionId());
-
+  // X-Lock 0
   res = lock_mgr.LockExclusive(txn, rid0);
   EXPECT_TRUE(res);
   CheckGrowing(txn);
   CheckTxnLockSize(txn, 0, 1);
-
+  // X-Lock 1
   res = lock_mgr.LockExclusive(txn, rid1);
   EXPECT_TRUE(res);
   CheckGrowing(txn);
   CheckTxnLockSize(txn, 0, 2);
-
+  // Unlock 1
   res = lock_mgr.Unlock(txn, rid1);
   EXPECT_TRUE(res);
   CheckShrinking(txn);
   CheckTxnLockSize(txn, 0, 1);
-
+  // Unlock 0
   res = lock_mgr.Unlock(txn, rid0);
   EXPECT_TRUE(res);
   CheckShrinking(txn);
@@ -86,21 +86,23 @@ void TwoPLTest2() {
   EXPECT_EQ(0, txn->GetTransactionId());
 
   bool res;
+  // S-Lock 0
   res = lock_mgr.LockShared(txn, rid0);
   EXPECT_TRUE(res);
   CheckGrowing(txn);
   CheckTxnLockSize(txn, 1, 0);
-
+  // X-Lock 1
   res = lock_mgr.LockExclusive(txn, rid1);
   EXPECT_TRUE(res);
   CheckGrowing(txn);
   CheckTxnLockSize(txn, 1, 1);
-
+  // Unlock 0
   res = lock_mgr.Unlock(txn, rid0);
   EXPECT_TRUE(res);
   CheckShrinking(txn);
   CheckTxnLockSize(txn, 0, 1);
 
+  // S-Lock 0, LOCK_ON_SHRINKING
   try {
     lock_mgr.LockShared(txn, rid0);
   } catch (TransactionAbortException &e) {

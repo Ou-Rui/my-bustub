@@ -2,6 +2,9 @@
 ## 22.10.05
 - PASS grading_lock_manager_test_1.cpp BasicTest
 
+## 22.10.06
+- PASS grading_lock_manager_test_2.cpp TwoPLTest
+
 # Project3 Query Execution
 ## 22.9.13
 - PASS catalog_test

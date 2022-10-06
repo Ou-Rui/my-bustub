@@ -143,11 +143,15 @@ class LockManager {
   std::unordered_map<txn_id_t, std::vector<txn_id_t>> waits_for_;
   /** Lock Map, Trace all held locks, RID --> S-LOCK or W-LOCK*/
   std::unordered_map<RID, LockMode> lock_map_;
+  // TODO(cicada): map rid --> unordered_set<granted_txn_id>
 
   /** Called when Unlock(rid)*/
   void GrantLockRequestQueue_(const RID &rid);
 
   bool Granted_(const txn_id_t &txn_id, const RID &rid);
+
+  std::string LockModeToString_(const LockMode &lockMode) const;
+  std::string TxnStateToString_(const TransactionState &state) const;
 
 };
 
