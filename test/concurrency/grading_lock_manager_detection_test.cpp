@@ -44,6 +44,7 @@ void CheckTxnLockSize(Transaction *txn, size_t shared_size, size_t exclusive_siz
 
 void BasicCycleTest() {
   LockManager lock_mgr{};
+  // Set interval to 5s, CycleDetection Thread will NOT wake up during the test
   cycle_detection_interval = std::chrono::seconds(5);
   TransactionManager txn_mgr{&lock_mgr};
 
@@ -343,15 +344,6 @@ TEST(LockManagerDetectionTest, MultipleCycleTest) {
 }
 /*
  * Score 5
- * Description: Simple two transaction deadlock detection test
- */
-TEST(LockManagerDetectionTest, BasicDeadlockDetectionTest) {
-  TEST_TIMEOUT_BEGIN
-  BasicDeadlockDetectionTest();
-  TEST_TIMEOUT_FAIL_END(1000 * 60)
-}
-/*
- * Score 5
  * Description: Check they correctly victim transactions in the right order when cycles overlap
  */
 
@@ -361,10 +353,19 @@ TEST(LockManagerDetectionTest, OverlappingCyclesTest) {
   TEST_TIMEOUT_FAIL_END(1000 * 60)
 }
 /*
+ * Score 5
+ * Description: Simple two transaction deadlock detection test
+ */
+TEST(LockManagerDetectionTest, DISABLED_BasicDeadlockDetectionTest) {
+  TEST_TIMEOUT_BEGIN
+  BasicDeadlockDetectionTest();
+  TEST_TIMEOUT_FAIL_END(1000 * 60)
+}
+/*
  * Score 10
  * Description: Check that they can handle large cycles by creating one big ring cycle
  */
-TEST(LockManagerDetectionTest, LargeDeadlockDetectionTest) {
+TEST(LockManagerDetectionTest, DISABLED_LargeDeadlockDetectionTest) {
   TEST_TIMEOUT_BEGIN
   LargeDeadlockDetectionTest();
   TEST_TIMEOUT_FAIL_END(1000 * 60)

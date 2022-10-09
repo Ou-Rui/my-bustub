@@ -141,10 +141,12 @@ class LockManager {
   std::unordered_map<RID, LockRequestQueue> lock_table_;
   /** Waits-for graph representation. */
   std::unordered_map<txn_id_t, std::vector<txn_id_t>> waits_for_;
-  /** Lock Map, Trace all held locks, RID --> S-LOCK or W-LOCK*/
+  /** Lock Map, Trace all held locks, RID --> S-LOCK or W-LOCK */
   std::unordered_map<RID, LockMode> lock_map_;
+  /** RID --> txn_ids of those who hold the lock, used for building waits_for_ graph */
+  std::unordered_map<RID, std::unordered_set<txn_id_t>> lock_holder_;
 
-  /** Called when Unlock(rid)*/
+  /** Called when Unlock(rid) */
   void GrantLockRequestQueue_(const RID &rid);
 
   bool Granted_(const txn_id_t &txn_id, const RID &rid);
@@ -153,6 +155,10 @@ class LockManager {
   std::string LockModeToString_(const LockMode &lockMode) const;
   std::string TxnStateToString_(const TransactionState &state) const;
 
+  /* Helpers of Deadlock Detection */
+  void BuildWaitsForGraph_();
+  std::vector<txn_id_t> SortGraph_();
+  bool DFS_(txn_id_t src, std::unordered_set<txn_id_t> *visited);
 };
 
 }  // namespace bustub

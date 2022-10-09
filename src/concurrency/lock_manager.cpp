@@ -244,13 +244,81 @@ void LockManager::EraseLockRequest_(const txn_id_t &txn_id, const RID &rid) {
 }
 
 
-void LockManager::AddEdge(txn_id_t t1, txn_id_t t2) {}
+void LockManager::AddEdge(txn_id_t t1, txn_id_t t2) {
+  std::unique_lock<std::mutex> guard{latch_};
+  // if already have the edge return, otherwise add
+  for (auto tid : waits_for_[t1]) {
+    if (tid == t2) {
+      return;
+    }
+  }
+  waits_for_[t1].emplace_back(t2);
+}
 
-void LockManager::RemoveEdge(txn_id_t t1, txn_id_t t2) {}
+void LockManager::RemoveEdge(txn_id_t t1, txn_id_t t2) {
+  std::unique_lock<std::mutex> guard{latch_};
+  auto &vec = waits_for_[t1];
+  for (auto iter = vec.begin(); iter != vec.end(); iter++) {
+    if (*iter == t2) {
+      vec.erase(iter);
+      return;
+    }
+  }
+}
 
-bool LockManager::HasCycle(txn_id_t *txn_id) { return false; }
+bool LockManager::HasCycle(txn_id_t *txn_id) {
+  std::unique_lock<std::mutex> guard{latch_};
+  auto src_nodes = SortGraph_();
 
-std::vector<std::pair<txn_id_t, txn_id_t>> LockManager::GetEdgeList() { return {}; }
+  for (const auto &src : src_nodes) {
+    std::unordered_set<txn_id_t> visited{};
+    if (DFS_(src, &visited)) {
+      std::vector<txn_id_t> circle{};
+      circle.reserve(visited.size());
+      for (auto &node : visited) {
+        circle.emplace_back(node);
+      }
+      // find Youngest txn (greatest txn_id)
+      std::sort(circle.begin(), circle.end(), std::greater<>());
+      BUSTUB_ASSERT(!circle.empty(), "Error, circle.size() = 0");
+      txn_id_t victim = circle[0];
+      *txn_id = victim;
+      return true;
+    }
+  }
+
+  return false;
+}
+
+bool LockManager::DFS_(txn_id_t src, std::unordered_set<txn_id_t> *visited) {
+  // if visited, circle
+  if (visited->count(src) != 0) {
+    return true;
+  }
+  visited->emplace(src);
+
+  for (auto next : waits_for_[src]) {
+    if (DFS_(next, visited)) {
+      return true;
+    }
+    visited->erase(next);
+  }
+
+  return false;
+}
+
+std::vector<std::pair<txn_id_t, txn_id_t>> LockManager::GetEdgeList() {
+  std::unique_lock<std::mutex> guard{latch_};
+  std::vector<std::pair<txn_id_t, txn_id_t>> res{};
+  for (const auto &item : waits_for_) {
+    txn_id_t tid1 = item.first;
+    auto tid2_set = item.second;
+    for (const auto &tid2 : tid2_set) {
+      res.emplace_back(std::make_pair(tid1, tid2));
+    }
+  }
+  return res;
+}
 
 void LockManager::RunCycleDetection() {
   while (enable_cycle_detection_) {
@@ -262,6 +330,21 @@ void LockManager::RunCycleDetection() {
     }
   }
 }
+
+// call this func with latch_ held
+std::vector<txn_id_t> LockManager::SortGraph_() {
+  std::vector<txn_id_t> src_nodes{};
+  for (auto &item : waits_for_) {
+    // always visit txn who has the least txn_id.
+    // thus, sort less --> greater
+    std::sort(item.second.begin(), item.second.end());
+    src_nodes.emplace_back(item.first);
+  }
+  // return sorted src_nodes
+  std::sort(src_nodes.begin(), src_nodes.end());
+  return src_nodes;
+}
+
 
 std::string LockManager::LockModeToString_(const LockMode &lockMode) const {
   switch(lockMode) {
