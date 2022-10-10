@@ -223,13 +223,15 @@ TEST_F(GradingTransactionTest, DirtyReadsTest) {
 }
 
 // NOLINTNEXTLINE
-TEST_F(GradingTransactionTest, DISABLED_UnrepeatableReadsTest) {
+TEST_F(GradingTransactionTest, UnrepeatableReadsTest) {
   // txn0: INSERT INTO empty_table2 VALUES (200, 20), (201, 21), (202, 22)
+  // txn0 commit
   // txn1: SELECT * FROM empty_table2;
   // txn2: UPDATE empty_table2 SET colA = colA+10
   // txn2 commit
   // txn1: SELECT * FROM empty_table2;
-
+  // txn1 commit
+  // NOTE: txn1 should read different tuples
   auto txn0 = GetTxnManager()->Begin();
   auto exec_ctx0 = std::make_unique<ExecutorContext>(txn0, GetCatalog(), GetBPM(), GetTxnManager(), GetLockManager());
   // Create Values to insert
@@ -263,6 +265,7 @@ TEST_F(GradingTransactionTest, DISABLED_UnrepeatableReadsTest) {
   ASSERT_EQ(result_set[2].GetValue(out_schema, out_schema->GetColIdx("colA")).GetAs<int32_t>(), 202);
 
   auto txn2 = GetTxnManager()->Begin(nullptr, IsolationLevel::READ_COMMITTED);
+  // update_plan has a seq_scan_plan as child
   auto exec_ctx2 = std::make_unique<ExecutorContext>(txn2, GetCatalog(), GetBPM(), GetTxnManager(), GetLockManager());
   std::unordered_map<uint32_t, UpdateInfo> update_attrs;
   update_attrs.insert(std::make_pair(0, UpdateInfo(UpdateType::Add, 10)));

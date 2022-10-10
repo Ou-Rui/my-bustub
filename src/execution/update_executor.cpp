@@ -30,10 +30,17 @@ void UpdateExecutor::Init() {
 }
 
 bool UpdateExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) {
+  auto lock_mgr = GetExecutorContext()->GetLockManager();
+  auto txn = GetExecutorContext()->GetTransaction();
   child_executor_->Init();
   Tuple old_tuple;
   while (child_executor_->Next(&old_tuple, rid)) {
     Tuple updated_tuple = GenerateUpdatedTuple(old_tuple);
+    if (txn->GetIsolationLevel() == IsolationLevel::REPEATABLE_READ) {
+      lock_mgr->LockUpgrade(txn, *rid);
+    } else {
+      lock_mgr->LockExclusive(txn, *rid);
+    }
     UpdateOne_(old_tuple, updated_tuple, *rid, GetExecutorContext()->GetTransaction());
   }
 
