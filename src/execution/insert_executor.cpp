@@ -56,9 +56,13 @@ bool InsertExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) {
 }
 
 void InsertExecutor::InsertOne_(const std::vector<Value> &values, RID *rid, Transaction *txn) {
+  auto lock_mgr = GetExecutorContext()->GetLockManager();
   // insert into table
   Tuple table_tuple(values, &(table_info_->schema_));
   table_info_->table_->InsertTuple(table_tuple, rid, txn);
+  // X-LOCK for all IsolationLevel
+  // NOTE: Lock after Insert, since we don't know the rid before the Insert
+  lock_mgr->LockExclusive(txn, *rid);
   // insert into indexes
   for (auto index : indexes_) {
     Tuple index_tuple = table_tuple.KeyFromTuple(table_info_->schema_, *index->GetKeySchema(), index->GetKeyAttrs());

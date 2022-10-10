@@ -198,7 +198,6 @@ bool LockManager::Unlock(Transaction *txn, const RID &rid) {
   if (lock_holder_[rid].empty()) {
     lock_holder_.erase(rid);
   }
-
   // update lock_table_ & lock_map_
   if (GrantLockRequestQueue_(rid)) {
     // wakeup all waited TXN on this tuple-lock

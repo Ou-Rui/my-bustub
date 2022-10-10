@@ -23,14 +23,14 @@ void SeqScanExecutor::Init() {
 
 bool SeqScanExecutor::Next(Tuple *tuple, RID *rid) {
   auto txn = GetExecutorContext()->GetTransaction();
-  auto lock_manager = GetExecutorContext()->GetLockManager();
+  auto lock_mgr = GetExecutorContext()->GetLockManager();
   while (iter_ != table_info_->table_->End()) {
     // get original tuple, then move forward iter
     *tuple = *iter_++;
     *rid = tuple->GetRid();
-    // READ_UNCOMMITTED don't need S-LOCK
+    // READ_UNCOMMITTED: don't need S-LOCK at all
     if (txn->GetIsolationLevel() != IsolationLevel::READ_UNCOMMITTED) {
-      lock_manager->LockShared(txn, *rid);
+      lock_mgr->LockShared(txn, *rid);
     }
     // evaluate predicate
     if (plan_->GetPredicate() == nullptr ||  // no predicate
@@ -44,7 +44,16 @@ bool SeqScanExecutor::Next(Tuple *tuple, RID *rid) {
       // create output tuple
       Tuple res(values, GetOutputSchema());
       *tuple = res;
+      // READ_COMMITTED: unlock S-LOCK Immediately
+      // NOTE: REPEATABLE_READ don't unlock until TransactionManager::Abort()
+      if (txn->GetIsolationLevel() == IsolationLevel::READ_COMMITTED) {
+        lock_mgr->Unlock(txn, *rid);
+      }
       return true;
+    }
+    // READ_COMMITTED: unlock S-LOCK Immediately
+    if (txn->GetIsolationLevel() == IsolationLevel::READ_COMMITTED) {
+      lock_mgr->Unlock(txn, *rid);
     }
   }
   return false;

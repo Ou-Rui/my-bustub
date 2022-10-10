@@ -48,7 +48,8 @@ class ExecutionEngine {
       }
     } catch (Exception &e) {
       // TODO(student): handle exceptions
-      e.ExpectionTypeToString()
+      auto tae = dynamic_cast<TransactionAbortException &>(e);
+      LOG_INFO("%s", tae.GetInfo().c_str());
     }
 
     return true;
