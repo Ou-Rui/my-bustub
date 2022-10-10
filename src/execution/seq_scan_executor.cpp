@@ -22,10 +22,16 @@ void SeqScanExecutor::Init() {
 }
 
 bool SeqScanExecutor::Next(Tuple *tuple, RID *rid) {
+  auto txn = GetExecutorContext()->GetTransaction();
+  auto lock_manager = GetExecutorContext()->GetLockManager();
   while (iter_ != table_info_->table_->End()) {
     // get original tuple, then move forward iter
     *tuple = *iter_++;
     *rid = tuple->GetRid();
+    // READ_UNCOMMITTED don't need S-LOCK
+    if (txn->GetIsolationLevel() != IsolationLevel::READ_UNCOMMITTED) {
+      lock_manager->LockShared(txn, *rid);
+    }
     // evaluate predicate
     if (plan_->GetPredicate() == nullptr ||  // no predicate
         plan_->GetPredicate()->Evaluate(tuple, GetOutputSchema()).GetAs<bool>()) {

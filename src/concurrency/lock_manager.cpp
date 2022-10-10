@@ -71,6 +71,7 @@ bool LockManager::LockShared(Transaction *txn, const RID &rid) {
   // if nobody held the X-Lock, Grant
   lock_map_[rid] = LockMode::SHARED;
   txn->GetSharedLockSet()->emplace(rid);
+  lock_holder_[rid].emplace(txn->GetTransactionId());
   return true;
 }
 
@@ -121,6 +122,7 @@ bool LockManager::LockExclusive(Transaction *txn, const RID &rid) {
   // if nobody held the X/S-Lock, Grant
   lock_map_[rid] = LockMode::EXCLUSIVE;
   txn->GetExclusiveLockSet()->emplace(rid);
+  lock_holder_[rid].emplace(txn->GetTransactionId());
   return true;
 }
 
@@ -187,6 +189,14 @@ bool LockManager::Unlock(Transaction *txn, const RID &rid) {
   if (txn->GetIsolationLevel() == IsolationLevel::REPEATABLE_READ &&
       txn->GetState() == TransactionState::GROWING) {
     txn->SetState(TransactionState::SHRINKING);
+  }
+  BUSTUB_ASSERT(lock_holder_.count(rid) != 0, "Nobody holds the lock????");
+  BUSTUB_ASSERT(lock_holder_[rid].count(txn->GetTransactionId()) != 0,
+                "You don't hold the lock????");
+  // update lock_holder_
+  lock_holder_[rid].erase(txn->GetTransactionId());
+  if (lock_holder_[rid].empty()) {
+    lock_holder_.erase(rid);
   }
 
   // update lock_table_ & lock_map_
