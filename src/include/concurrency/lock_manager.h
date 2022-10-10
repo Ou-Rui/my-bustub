@@ -147,18 +147,20 @@ class LockManager {
   std::unordered_map<RID, std::unordered_set<txn_id_t>> lock_holder_;
 
   /** Called when Unlock(rid) */
-  void GrantLockRequestQueue_(const RID &rid);
+  bool GrantLockRequestQueue_(const RID &rid);
 
   bool Granted_(const txn_id_t &txn_id, const RID &rid);
   void EraseLockRequest_(const txn_id_t &txn_id, const RID &rid);
 
-  std::string LockModeToString_(const LockMode &lockMode) const;
-  std::string TxnStateToString_(const TransactionState &state) const;
-
-  /* Helpers of Deadlock Detection */
+  /** Helpers of Deadlock Detection */
   void BuildWaitsForGraph_();
+  void AbortAndRemove_(const txn_id_t &tid);
   std::vector<txn_id_t> SortGraph_();
   bool DFS_(txn_id_t src, std::unordered_set<txn_id_t> *visited);
+
+  /** Debug Util */
+  std::string LockModeToString_(const LockMode &lockMode) const;
+  std::string TxnStateToString_(const TransactionState &state) const;
 };
 
 }  // namespace bustub

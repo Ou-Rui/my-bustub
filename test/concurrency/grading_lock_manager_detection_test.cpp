@@ -356,7 +356,7 @@ TEST(LockManagerDetectionTest, OverlappingCyclesTest) {
  * Score 5
  * Description: Simple two transaction deadlock detection test
  */
-TEST(LockManagerDetectionTest, DISABLED_BasicDeadlockDetectionTest) {
+TEST(LockManagerDetectionTest, BasicDeadlockDetectionTest) {
   TEST_TIMEOUT_BEGIN
   BasicDeadlockDetectionTest();
   TEST_TIMEOUT_FAIL_END(1000 * 60)
@@ -365,7 +365,7 @@ TEST(LockManagerDetectionTest, DISABLED_BasicDeadlockDetectionTest) {
  * Score 10
  * Description: Check that they can handle large cycles by creating one big ring cycle
  */
-TEST(LockManagerDetectionTest, DISABLED_LargeDeadlockDetectionTest) {
+TEST(LockManagerDetectionTest, LargeDeadlockDetectionTest) {
   TEST_TIMEOUT_BEGIN
   LargeDeadlockDetectionTest();
   TEST_TIMEOUT_FAIL_END(1000 * 60)

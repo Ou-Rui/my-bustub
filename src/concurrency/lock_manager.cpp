@@ -11,6 +11,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "concurrency/lock_manager.h"
+#include "concurrency/transaction_manager.h"
 
 #include <utility>
 #include <vector>
@@ -64,7 +65,8 @@ bool LockManager::LockShared(Transaction *txn, const RID &rid) {
   if (txn->GetState() == TransactionState::ABORTED) {
     LOG_INFO("ABORTED after wakeup, txn_id = %d, rid = %s",
              txn->GetTransactionId(), rid.ToString().c_str());
-    return false;
+    throw TransactionAbortException(
+        txn->GetTransactionId(), AbortReason::DEADLOCK);
   }
   // if nobody held the X-Lock, Grant
   lock_map_[rid] = LockMode::SHARED;
@@ -113,7 +115,8 @@ bool LockManager::LockExclusive(Transaction *txn, const RID &rid) {
   if (txn->GetState() == TransactionState::ABORTED) {
     LOG_INFO("ABORTED after wakeup, txn_id = %d, rid = %s",
              txn->GetTransactionId(), rid.ToString().c_str());
-    return false;
+    throw TransactionAbortException(
+        txn->GetTransactionId(), AbortReason::DEADLOCK);
   }
   // if nobody held the X/S-Lock, Grant
   lock_map_[rid] = LockMode::EXCLUSIVE;
@@ -167,7 +170,8 @@ bool LockManager::LockUpgrade(Transaction *txn, const RID &rid) {
   if (txn->GetState() == TransactionState::ABORTED) {
     LOG_INFO("ABORTED after wakeup, txn_id = %d, rid = %s",
              txn->GetTransactionId(), rid.ToString().c_str());
-    return false;
+    throw TransactionAbortException(
+        txn->GetTransactionId(), AbortReason::DEADLOCK);
   }
   // if nobody held the X/S-Lock, Grant
   lock_map_[rid] = LockMode::EXCLUSIVE;
@@ -186,17 +190,20 @@ bool LockManager::Unlock(Transaction *txn, const RID &rid) {
   }
 
   // update lock_table_ & lock_map_
-  GrantLockRequestQueue_(rid);
-  // wakeup all waited TXN on this tuple-lock
-  lock_table_[rid].cv_.notify_all();
+  if (GrantLockRequestQueue_(rid)) {
+    // wakeup all waited TXN on this tuple-lock
+    lock_table_[rid].cv_.notify_all();
+  }
   // update txn.lock_set
   txn->GetSharedLockSet()->erase(rid);
   txn->GetExclusiveLockSet()->erase(rid);
   return true;
 }
 
-void LockManager::GrantLockRequestQueue_(const RID &rid) {
+// return true iff at least one TXN is granted
+bool LockManager::GrantLockRequestQueue_(const RID &rid) {
   std::list<LockRequest> &queue = lock_table_[rid].request_queue_;
+  bool granted = false;
   for(auto iter = queue.begin(); iter != queue.end(); iter++) {
     if (iter->lock_mode_ == LockMode::SHARED && lock_map_[rid] != LockMode::EXCLUSIVE) {
       // S-Lock Request && NO X-Lock Granted
@@ -205,6 +212,7 @@ void LockManager::GrantLockRequestQueue_(const RID &rid) {
                LockModeToString_(iter->lock_mode_).c_str(),
                rid.ToString().c_str(), iter->txn_id_);
       iter->granted_ = true;
+      granted = true;
       // no break, maybe more S-Lock can be granted
     } else if (iter->lock_mode_ == LockMode::EXCLUSIVE && lock_map_.count(rid) == 0) {
       // X-Lock Request && NO Lock Granted
@@ -213,6 +221,7 @@ void LockManager::GrantLockRequestQueue_(const RID &rid) {
                LockModeToString_(iter->lock_mode_).c_str(),
                rid.ToString().c_str(), iter->txn_id_);
       iter->granted_ = true;
+      granted = true;
       // break, since only one TXN can get X-Lock
       break;
     } else {
@@ -220,6 +229,8 @@ void LockManager::GrantLockRequestQueue_(const RID &rid) {
       break;
     }
   }
+
+  return granted;
 }
 
 bool LockManager::Granted_(const txn_id_t &txn_id, const RID &rid) {
@@ -267,7 +278,7 @@ void LockManager::RemoveEdge(txn_id_t t1, txn_id_t t2) {
 }
 
 bool LockManager::HasCycle(txn_id_t *txn_id) {
-  std::unique_lock<std::mutex> guard{latch_};
+  // std::unique_lock<std::mutex> guard{latch_};
   auto src_nodes = SortGraph_();
 
   for (const auto &src : src_nodes) {
@@ -288,6 +299,20 @@ bool LockManager::HasCycle(txn_id_t *txn_id) {
   }
 
   return false;
+}
+
+// call this func with latch_ held
+std::vector<txn_id_t> LockManager::SortGraph_() {
+  std::vector<txn_id_t> src_nodes{};
+  for (auto &item : waits_for_) {
+    // always visit txn who has the least txn_id.
+    // thus, sort less --> greater
+    std::sort(item.second.begin(), item.second.end());
+    src_nodes.emplace_back(item.first);
+  }
+  // return sorted src_nodes
+  std::sort(src_nodes.begin(), src_nodes.end());
+  return src_nodes;
 }
 
 bool LockManager::DFS_(txn_id_t src, std::unordered_set<txn_id_t> *visited) {
@@ -324,27 +349,72 @@ void LockManager::RunCycleDetection() {
   while (enable_cycle_detection_) {
     std::this_thread::sleep_for(cycle_detection_interval);
     {
-      std::unique_lock<std::mutex> l(latch_);
-      // TODO(student): remove the continue and add your cycle detection and abort code here
-      continue;
+      std::unique_lock<std::mutex> guard(latch_);
+      if (waits_for_.empty()) {
+        BuildWaitsForGraph_();
+        txn_id_t victim;
+        while (HasCycle(&victim)) {
+          AbortAndRemove_(victim);
+          // rebuild graph
+          BuildWaitsForGraph_();
+        }
+        waits_for_.clear();
+      }
     }
   }
 }
 
-// call this func with latch_ held
-std::vector<txn_id_t> LockManager::SortGraph_() {
-  std::vector<txn_id_t> src_nodes{};
-  for (auto &item : waits_for_) {
-    // always visit txn who has the least txn_id.
-    // thus, sort less --> greater
-    std::sort(item.second.begin(), item.second.end());
-    src_nodes.emplace_back(item.first);
+void LockManager::BuildWaitsForGraph_() {
+  waits_for_.clear();
+  for (const auto &item : lock_table_) {
+    const RID &rid = item.first;
+    const auto &queue = item.second.request_queue_;
+    for (const auto &lock_request : queue) {
+      // tid1: waiter, tid2: holder
+      const auto &tid1 = lock_request.txn_id_;
+      for (const auto &tid2 : lock_holder_[rid]) {
+        AddEdge(tid1, tid2);
+      }
+    }
   }
-  // return sorted src_nodes
-  std::sort(src_nodes.begin(), src_nodes.end());
-  return src_nodes;
 }
 
+void LockManager::AbortAndRemove_(const txn_id_t &tid) {
+  auto txn = TransactionManager::GetTransaction(tid);
+  txn->SetState(TransactionState::ABORTED);
+
+  // lock_table_
+  for (auto &item : lock_table_) {
+    auto &lr_queue = item.second;
+    auto &queue = lr_queue.request_queue_;
+    // erase txn in LockRequestQueue and notify
+    for (auto iter = queue.begin(); iter != queue.end(); iter++) {
+      if (iter->txn_id_ == tid) {
+        queue.erase(iter);
+        // notify_all, since a TXN is ABORTED
+        lr_queue.cv_.notify_all();
+        break;
+      }
+    }
+  }
+  // lock_holder_ & lock_map_
+  for (auto &item : lock_holder_) {
+    RID rid = item.first;
+    auto &holders = item.second;
+    if (holders.count(tid) != 0) {
+      holders.erase(tid);
+      if (GrantLockRequestQueue_(rid)) {
+        // if nobody holds the lock, erase the record
+        if (holders.empty()) {
+          lock_holder_.erase(rid);
+          lock_map_.erase(rid);
+        }
+        // notify_all, since some TXN is granted
+        lock_table_[rid].cv_.notify_all();
+      }
+    }
+  }
+}
 
 std::string LockManager::LockModeToString_(const LockMode &lockMode) const {
   switch(lockMode) {

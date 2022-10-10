@@ -1,10 +1,13 @@
 # Project4 Concurrency Control
-## 22.10.05
-- PASS grading_lock_manager_test_1.cpp BasicTest
+## 22.10.10
+- PASS grading_lock_manager_detection_test.cpp
 
 ## 22.10.06
 - PASS grading_lock_manager_test_2.cpp TwoPLTest
 - PASS grading_lock_manager_test_3.cpp UpgradeLockTest
+
+## 22.10.05
+- PASS grading_lock_manager_test_1.cpp BasicTest
 
 # Project3 Query Execution
 ## 22.9.13
