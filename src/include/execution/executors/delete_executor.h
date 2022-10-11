@@ -53,6 +53,6 @@ class DeleteExecutor : public AbstractExecutor {
   std::unique_ptr<AbstractExecutor> child_executor_;
 
   TableMetadata *table_info_;
-  std::vector<BPlusTreeIndex<GenericKey<8>, RID, GenericComparator<8>> *> indexes_;
+  std::vector<IndexInfo *> indexes_info_;
 };
 }  // namespace bustub

@@ -25,11 +25,7 @@ InsertExecutor::InsertExecutor(ExecutorContext *exec_ctx, const InsertPlanNode *
 void InsertExecutor::Init() {
   table_info_ = GetExecutorContext()->GetCatalog()->GetTable(plan_->TableOid());
 
-  auto indexes_info = GetExecutorContext()->GetCatalog()->GetTableIndexes(table_info_->name_);
-  for (auto index_info : indexes_info) {
-    auto index = reinterpret_cast<BPlusTreeIndex<GenericKey<8>, RID, GenericComparator<8>> *>(index_info->index_.get());
-    indexes_.emplace_back(index);
-  }
+  indexes_info_ = GetExecutorContext()->GetCatalog()->GetTableIndexes(table_info_->name_);
 }
 
 bool InsertExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) {
@@ -64,9 +60,12 @@ void InsertExecutor::InsertOne_(const std::vector<Value> &values, RID *rid, Tran
   // NOTE: Lock after Insert, since we don't know the rid before the Insert
   lock_mgr->LockExclusive(txn, *rid);
   // insert into indexes
-  for (auto index : indexes_) {
+  for (auto index_info : indexes_info_) {
+    auto index = reinterpret_cast<BPlusTreeIndex<GenericKey<8>, RID, GenericComparator<8>> *>(index_info->index_.get());
     Tuple index_tuple = table_tuple.KeyFromTuple(table_info_->schema_, *index->GetKeySchema(), index->GetKeyAttrs());
     index->InsertEntry(index_tuple, *rid, txn);
+    txn->GetIndexWriteSet()->emplace_back(*rid, table_info_->oid_, WType::INSERT, index_tuple, index_info->index_oid_,
+                                          GetExecutorContext()->GetCatalog());
   }
 }
 

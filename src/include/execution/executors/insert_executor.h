@@ -12,9 +12,9 @@
 
 #pragma once
 
-#include <vector>
 #include <memory>
 #include <utility>
+#include <vector>
 
 #include "execution/executor_context.h"
 #include "execution/executors/abstract_executor.h"
@@ -51,7 +51,7 @@ class InsertExecutor : public AbstractExecutor {
 
   std::unique_ptr<AbstractExecutor> child_executor_;
   TableMetadata *table_info_;
-  std::vector<BPlusTreeIndex<GenericKey<8>, RID, GenericComparator<8>> *> indexes_;
+  std::vector<IndexInfo *> indexes_info_;
 
   void InsertOne_(const std::vector<Value> &values, RID *rid, Transaction *txn);
 };

@@ -22,11 +22,7 @@ UpdateExecutor::UpdateExecutor(ExecutorContext *exec_ctx, const UpdatePlanNode *
 void UpdateExecutor::Init() {
   table_info_ = GetExecutorContext()->GetCatalog()->GetTable(plan_->TableOid());
 
-  auto indexes_info = GetExecutorContext()->GetCatalog()->GetTableIndexes(table_info_->name_);
-  for (auto index_info : indexes_info) {
-    auto index = reinterpret_cast<BPlusTreeIndex<GenericKey<8>, RID, GenericComparator<8>> *>(index_info->index_.get());
-    indexes_.emplace_back(index);
-  }
+  indexes_info_ = GetExecutorContext()->GetCatalog()->GetTableIndexes(table_info_->name_);
 }
 
 bool UpdateExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) {
@@ -50,7 +46,9 @@ bool UpdateExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) {
 void UpdateExecutor::UpdateOne_(Tuple old_tuple, Tuple updated_tuple, const RID &rid, Transaction *txn) {
   table_info_->table_->UpdateTuple(updated_tuple, rid, txn);
   // Update Indexes
-  for (auto index : indexes_) {
+  for (auto index_info : indexes_info_) {
+    auto index = reinterpret_cast<BPlusTreeIndex<GenericKey<8>, RID, GenericComparator<8>> *>(index_info->index_.get());
+
     // Delete Old
     Tuple old_index_tuple = old_tuple.KeyFromTuple(table_info_->schema_, *index->GetKeySchema(), index->GetKeyAttrs());
     index->DeleteEntry(old_index_tuple, rid, txn);
@@ -58,6 +56,14 @@ void UpdateExecutor::UpdateOne_(Tuple old_tuple, Tuple updated_tuple, const RID 
     Tuple updated_index_tuple =
         updated_tuple.KeyFromTuple(table_info_->schema_, *index->GetKeySchema(), index->GetKeyAttrs());
     index->InsertEntry(updated_index_tuple, rid, txn);
+    IndexWriteRecord record{rid,
+                            table_info_->oid_,
+                            WType::UPDATE,
+                            updated_index_tuple,
+                            index_info->index_oid_,
+                            GetExecutorContext()->GetCatalog()};
+    record.old_tuple_ = old_index_tuple;
+    txn->GetIndexWriteSet()->emplace_back(record);
   }
 }
 

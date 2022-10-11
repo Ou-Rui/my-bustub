@@ -82,8 +82,8 @@ class UpdateExecutor : public AbstractExecutor {
   const TableMetadata *table_info_;
   /** The child executor to obtain value from. */
   std::unique_ptr<AbstractExecutor> child_executor_;
-
-  std::vector<BPlusTreeIndex<GenericKey<8>, RID, GenericComparator<8>> *> indexes_;
+  std::vector<IndexInfo *> indexes_info_;
+  // std::vector<BPlusTreeIndex<GenericKey<8>, RID, GenericComparator<8>> *> indexes_;
 
   void UpdateOne_(Tuple old_tuple, Tuple updated_tuple, const RID &rid, Transaction *txn);
 };

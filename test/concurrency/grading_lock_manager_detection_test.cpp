@@ -318,7 +318,7 @@ void LargeDeadlockDetectionTest() {
  * Score 5
  * Description: Basic Cycle test
  */
-TEST(LockManagerDetectionTest, DISABLED_BasicCycleTest) {
+TEST(LockManagerDetectionTest, BasicCycleTest) {
   TEST_TIMEOUT_BEGIN
   BasicCycleTest();
   TEST_TIMEOUT_FAIL_END(1000 * 20)
@@ -327,7 +327,7 @@ TEST(LockManagerDetectionTest, DISABLED_BasicCycleTest) {
  * Score 5
  * Description: Tests that random edges are added and can be found with GetEdgeList function
  */
-TEST(LockManagerDetectionTest, DISABLED_EdgeTest) {
+TEST(LockManagerDetectionTest, EdgeTest) {
   TEST_TIMEOUT_BEGIN
   EdgeTest();
   TEST_TIMEOUT_FAIL_END(1000 * 60)
@@ -337,7 +337,7 @@ TEST(LockManagerDetectionTest, DISABLED_EdgeTest) {
  * Description: Check they correctly victim transactions in the right order when multiple
  * cycles occur
  */
-TEST(LockManagerDetectionTest, DISABLED_MultipleCycleTest) {
+TEST(LockManagerDetectionTest, MultipleCycleTest) {
   TEST_TIMEOUT_BEGIN
   MultipleCycleTest();
   TEST_TIMEOUT_FAIL_END(1000 * 60)
@@ -347,7 +347,7 @@ TEST(LockManagerDetectionTest, DISABLED_MultipleCycleTest) {
  * Description: Check they correctly victim transactions in the right order when cycles overlap
  */
 
-TEST(LockManagerDetectionTest, DISABLED_OverlappingCyclesTest) {
+TEST(LockManagerDetectionTest, OverlappingCyclesTest) {
   TEST_TIMEOUT_BEGIN
   OverlappingCyclesTest();
   TEST_TIMEOUT_FAIL_END(1000 * 60)
@@ -357,9 +357,9 @@ TEST(LockManagerDetectionTest, DISABLED_OverlappingCyclesTest) {
  * Description: Simple two transaction deadlock detection test
  */
 TEST(LockManagerDetectionTest, BasicDeadlockDetectionTest) {
-//  TEST_TIMEOUT_BEGIN
+  //  TEST_TIMEOUT_BEGIN
   BasicDeadlockDetectionTest();
-//  TEST_TIMEOUT_FAIL_END(1000 * 60)
+  //  TEST_TIMEOUT_FAIL_END(1000 * 60)
 }
 /*
  * Score 10

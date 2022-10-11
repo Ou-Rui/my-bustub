@@ -382,11 +382,11 @@ TEST_F(GradingTransactionTest, RepeatableReadsTest) {
 }
 
 // NOLINTNEXTLINE
-TEST_F(GradingTransactionTest, DISABLED_IntegratedTest) {
-  //  txn1 ->        scan -> join -> aggregate
-  //  txn2 ->    delete one tuple -> commit
-  //  txn3 -> scan
-
+TEST_F(GradingTransactionTest, IntegratedTest) {
+  // txn1 ->        scan -> join -> aggregate
+  // txn2 ->    delete one tuple -> commit
+  // txn3 -> scan
+  // IsolationLevel = REPEATABLE_READ
   auto txn1 = GetTxnManager()->Begin();
   auto exec_ctx1 = std::make_unique<ExecutorContext>(txn1, GetCatalog(), GetBPM(), GetTxnManager(), GetLockManager());
   auto txn2 = GetTxnManager()->Begin();

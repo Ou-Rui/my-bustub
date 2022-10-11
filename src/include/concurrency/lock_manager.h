@@ -17,12 +17,14 @@
 #include <list>
 #include <memory>
 #include <mutex>  // NOLINT
+#include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
-#include "common/rid.h"
 #include "common/logger.h"
+#include "common/rid.h"
 #include "concurrency/transaction.h"
 
 namespace bustub {
