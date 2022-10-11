@@ -1,4 +1,7 @@
 # Project4 Concurrency Control
+## 22.10.11
+- PASS grading_transaction_test.cpp:DirtyReadsTest()/UnrepeatableReadsTest()/RepeatableReadsTest()
+
 ## 22.10.10
 - PASS grading_lock_manager_detection_test.cpp
 

@@ -293,8 +293,9 @@ TEST_F(GradingTransactionTest, UnrepeatableReadsTest) {
 }
 
 // NOLINTNEXTLINE
-TEST_F(GradingTransactionTest, DISABLED_RepeatableReadsTest) {
+TEST_F(GradingTransactionTest, RepeatableReadsTest) {
   // txn0: INSERT INTO empty_table2 VALUES (200, 20), (201, 21), (202, 22)
+  // txn0 commit
   // txn1: SELECT * FROM empty_table2;
   // txn2: UPDATE empty_table2 SET colA = colA+10
   // txn1: SELECT * FROM empty_table2;
@@ -329,6 +330,7 @@ TEST_F(GradingTransactionTest, DISABLED_RepeatableReadsTest) {
   std::unique_ptr<AbstractPlanNode> update_plan;
   { update_plan = std::make_unique<UpdatePlanNode>(&scan_plan, table_info->oid_, update_attrs); }
 
+  // thread for txn1, read table twice, should read the same tuples (REPEATABLE_READ)
   std::thread t0([&] {
     std::vector<Tuple> result_set;
     GetExecutionEngine()->Execute(&scan_plan, &result_set, txn1, exec_ctx1.get());
@@ -355,6 +357,7 @@ TEST_F(GradingTransactionTest, DISABLED_RepeatableReadsTest) {
     GetTxnManager()->Commit(txn1);
   });
 
+  // thread for txn2, update tuples then scan, should read the updated tuples
   std::thread t1([&] {
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
     GetExecutionEngine()->Execute(update_plan.get(), nullptr, txn2, exec_ctx2.get());

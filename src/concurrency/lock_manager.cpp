@@ -42,9 +42,8 @@ bool LockManager::LockShared(Transaction *txn, const RID &rid) {
     throw TransactionAbortException(
         txn->GetTransactionId(), AbortReason::LOCKSHARED_ON_READ_UNCOMMITTED);
   }
-  BUSTUB_ASSERT(!txn->IsExclusiveLocked(rid), "Should Not have X-Lock");
   // TXN already holds the S-Lock
-  if (txn->IsSharedLocked(rid)) {
+  if (txn->IsSharedLocked(rid) || txn->IsExclusiveLocked(rid)) {
     LOG_INFO("TXN %d, already has S-Lock, rid = %s",
              txn->GetTransactionId(), rid.ToString().c_str());
     return true;
@@ -54,10 +53,12 @@ bool LockManager::LockShared(Transaction *txn, const RID &rid) {
   std::unique_lock<std::mutex> guard(latch_);
   if (lock_map_[rid] == LockMode::EXCLUSIVE) {
     // block TXN, wait for lock granted
+    LOG_INFO("someone else holds X-lock, blocked..., txn_id = %d, rid = %s",
+             txn->GetTransactionId(), rid.ToString().c_str());
     LockRequest lock_request{txn->GetTransactionId(), LockMode::SHARED};
     lock_table_[rid].request_queue_.emplace_back(lock_request);
     while (txn->GetState() != TransactionState::ABORTED &&
-           Granted_(txn->GetTransactionId(), rid)) {
+           !Granted_(txn->GetTransactionId(), rid)) {
       lock_table_[rid].cv_.wait(guard);
     }
     EraseLockRequest_(txn->GetTransactionId(), rid);
@@ -96,7 +97,7 @@ bool LockManager::LockExclusive(Transaction *txn, const RID &rid) {
   BUSTUB_ASSERT(!txn->IsSharedLocked(rid), "CALL LockUpgrade instead!!");
   // TXN already holds the W-Lock
   if (txn->IsExclusiveLocked(rid)) {
-    LOG_INFO("TXN %d, already has S-Lock, rid = %s",
+    LOG_INFO("TXN %d, already has X-Lock, rid = %s",
              txn->GetTransactionId(), rid.ToString().c_str());
     return true;
   }
@@ -105,10 +106,12 @@ bool LockManager::LockExclusive(Transaction *txn, const RID &rid) {
   std::unique_lock<std::mutex> guard(latch_);
   if (lock_map_.count(rid) != 0) {
     // block TXN, wait for lock granted
+    LOG_INFO("someone else holds the lock, blocked..., txn_id = %d, rid = %s",
+             txn->GetTransactionId(), rid.ToString().c_str());
     LockRequest lock_request{txn->GetTransactionId(), LockMode::EXCLUSIVE};
     lock_table_[rid].request_queue_.emplace_back(lock_request);
     while (txn->GetState() != TransactionState::ABORTED &&
-           Granted_(txn->GetTransactionId(), rid)) {
+           !Granted_(txn->GetTransactionId(), rid)) {
       lock_table_[rid].cv_.wait(guard);
     }
     EraseLockRequest_(txn->GetTransactionId(), rid);
@@ -123,6 +126,8 @@ bool LockManager::LockExclusive(Transaction *txn, const RID &rid) {
   lock_map_[rid] = LockMode::EXCLUSIVE;
   txn->GetExclusiveLockSet()->emplace(rid);
   lock_holder_[rid].emplace(txn->GetTransactionId());
+  LOG_INFO("X-LOCK DONE, txn_id = %d, rid = %s",
+           txn->GetTransactionId(), rid.ToString().c_str());
   return true;
 }
 
@@ -145,8 +150,11 @@ bool LockManager::LockUpgrade(Transaction *txn, const RID &rid) {
   BUSTUB_ASSERT(txn->GetState() == TransactionState::GROWING, "Unexpected TXN State..");
   // TXN must hold the S-Lock
   BUSTUB_ASSERT(txn->IsSharedLocked(rid), "No S-Lock, cannot Upgrade");
-  // TXN must NOT hold W-Lock
-  BUSTUB_ASSERT(!txn->IsExclusiveLocked(rid), "Already hold X-Lock, cannot Upgrade");
+  if (txn->IsExclusiveLocked(rid)) {
+    LOG_INFO("TXN %d, already has X-Lock, rid = %s",
+             txn->GetTransactionId(), rid.ToString().c_str());
+    return true;
+  }
 
   std::unique_lock<std::mutex> guard(latch_);
 
@@ -157,13 +165,19 @@ bool LockManager::LockUpgrade(Transaction *txn, const RID &rid) {
     throw TransactionAbortException(
         txn->GetTransactionId(), AbortReason::UPGRADE_CONFLICT);
   }
-  // if someone holds X/S-Lock, block until granted
-  if (lock_map_.count(rid) != 0) {
+  BUSTUB_ASSERT(lock_holder_.count(rid) != 0 && !lock_holder_[rid].empty(),
+                "Nobody holds the lock, cannot Upgrade");
+  BUSTUB_ASSERT(lock_holder_[rid].count(txn->GetTransactionId()) != 0,
+                "You are not the lock_holder, cannot Upgrade");
+  // if someone else holds X/S-Lock, block until granted
+  if (lock_holder_[rid].size() > 1) {
+    LOG_INFO("someone else holds the lock, blocked..., txn_id = %d, rid = %s",
+             txn->GetTransactionId(), rid.ToString().c_str());
     lrq.upgrading_ = true;
     LockRequest lock_request{txn->GetTransactionId(), LockMode::EXCLUSIVE};
     lrq.request_queue_.emplace_back(lock_request);
     while (txn->GetState() != TransactionState::ABORTED &&
-           Granted_(txn->GetTransactionId(), rid)) {
+           !Granted_(txn->GetTransactionId(), rid)) {
       lrq.cv_.wait(guard);
     }
     EraseLockRequest_(txn->GetTransactionId(), rid);
@@ -177,26 +191,38 @@ bool LockManager::LockUpgrade(Transaction *txn, const RID &rid) {
   }
   // if nobody held the X/S-Lock, Grant
   lock_map_[rid] = LockMode::EXCLUSIVE;
-
   txn->GetSharedLockSet()->erase(rid);
   txn->GetExclusiveLockSet()->emplace(rid);
+  LOG_INFO("Upgrade DONE, txn_id = %d, rid = %s",
+           txn->GetTransactionId(), rid.ToString().c_str());
   return true;
 }
 
 bool LockManager::Unlock(Transaction *txn, const RID &rid) {
   std::unique_lock<std::mutex> guard(latch_);
+  LOG_INFO("TXN %d, rid = %s, state = %s",
+           txn->GetTransactionId(), rid.ToString().c_str(),
+           TxnStateToString_(txn->GetState()).c_str());
   // TXN State: if 2PL, set to SHRINKING
   if (txn->GetIsolationLevel() == IsolationLevel::REPEATABLE_READ &&
       txn->GetState() == TransactionState::GROWING) {
     txn->SetState(TransactionState::SHRINKING);
   }
-  BUSTUB_ASSERT(lock_holder_.count(rid) != 0, "Nobody holds the lock????");
-  BUSTUB_ASSERT(lock_holder_[rid].count(txn->GetTransactionId()) != 0,
-                "You don't hold the lock????");
+  if (lock_holder_.count(rid) == 0 ||
+      lock_holder_[rid].count(txn->GetTransactionId()) == 0) {
+    LOG_INFO("You don't hold the lock, no need to unlock, TXN %d, rid = %s, state = %s",
+             txn->GetTransactionId(), rid.ToString().c_str(),
+             TxnStateToString_(txn->GetState()).c_str());
+    return true;
+  }
+//  BUSTUB_ASSERT(lock_holder_.count(rid) != 0, "Nobody holds the lock????");
+//  BUSTUB_ASSERT(lock_holder_[rid].count(txn->GetTransactionId()) != 0,
+//                "You don't hold the lock????");
   // update lock_holder_
   lock_holder_[rid].erase(txn->GetTransactionId());
   if (lock_holder_[rid].empty()) {
     lock_holder_.erase(rid);
+    lock_map_.erase(rid);
   }
   // update lock_table_ & lock_map_
   if (GrantLockRequestQueue_(rid)) {
@@ -233,9 +259,20 @@ bool LockManager::GrantLockRequestQueue_(const RID &rid) {
       granted = true;
       // break, since only one TXN can get X-Lock
       break;
+    } else if (iter->lock_mode_ == LockMode::EXCLUSIVE && lock_table_[rid].upgrading_ &&
+               lock_map_[rid] == LockMode::SHARED &&
+               lock_holder_[rid].size() == 1 &&
+               lock_holder_[rid].count(iter->txn_id_) == 1) {
+        // lock upgrade, the only one holds the S-LOCK is myself, grant
+        LOG_INFO("Grant Lock Upgrade, rid = %s, txn_id = %d",
+                 rid.ToString().c_str(), iter->txn_id_);
+        lock_map_[rid] = LockMode::EXCLUSIVE;
+        iter->granted_ = true;
+        granted = true;
+        break;
     } else {
-      // break when encounter first not granted
-      break;
+        // break when encounter first not granted
+        break;
     }
   }
 
@@ -265,7 +302,7 @@ void LockManager::EraseLockRequest_(const txn_id_t &txn_id, const RID &rid) {
 
 
 void LockManager::AddEdge(txn_id_t t1, txn_id_t t2) {
-  std::unique_lock<std::mutex> guard{latch_};
+  // std::unique_lock<std::mutex> guard(latch_);
   // if already have the edge return, otherwise add
   for (auto tid : waits_for_[t1]) {
     if (tid == t2) {
@@ -276,7 +313,7 @@ void LockManager::AddEdge(txn_id_t t1, txn_id_t t2) {
 }
 
 void LockManager::RemoveEdge(txn_id_t t1, txn_id_t t2) {
-  std::unique_lock<std::mutex> guard{latch_};
+  // std::unique_lock<std::mutex> guard(latch_);
   auto &vec = waits_for_[t1];
   for (auto iter = vec.begin(); iter != vec.end(); iter++) {
     if (*iter == t2) {
@@ -287,7 +324,7 @@ void LockManager::RemoveEdge(txn_id_t t1, txn_id_t t2) {
 }
 
 bool LockManager::HasCycle(txn_id_t *txn_id) {
-  // std::unique_lock<std::mutex> guard{latch_};
+  // std::unique_lock<std::mutex> guard(latch_);
   auto src_nodes = SortGraph_();
 
   for (const auto &src : src_nodes) {
@@ -342,7 +379,7 @@ bool LockManager::DFS_(txn_id_t src, std::unordered_set<txn_id_t> *visited) {
 }
 
 std::vector<std::pair<txn_id_t, txn_id_t>> LockManager::GetEdgeList() {
-  std::unique_lock<std::mutex> guard{latch_};
+  std::unique_lock<std::mutex> guard(latch_);
   std::vector<std::pair<txn_id_t, txn_id_t>> res{};
   for (const auto &item : waits_for_) {
     txn_id_t tid1 = item.first;
@@ -382,13 +419,16 @@ void LockManager::BuildWaitsForGraph_() {
       // tid1: waiter, tid2: holder
       const auto &tid1 = lock_request.txn_id_;
       for (const auto &tid2 : lock_holder_[rid]) {
-        AddEdge(tid1, tid2);
+        if (tid1 != tid2) {
+          AddEdge(tid1, tid2);
+        }
       }
     }
   }
 }
 
 void LockManager::AbortAndRemove_(const txn_id_t &tid) {
+  LOG_INFO("Victim TXN %d", tid);
   auto txn = TransactionManager::GetTransaction(tid);
   txn->SetState(TransactionState::ABORTED);
 
@@ -412,12 +452,12 @@ void LockManager::AbortAndRemove_(const txn_id_t &tid) {
     auto &holders = item.second;
     if (holders.count(tid) != 0) {
       holders.erase(tid);
+      // if nobody holds the lock, erase the record
+      if (holders.empty()) {
+        lock_map_.erase(rid);
+        lock_holder_.erase(rid);
+      }
       if (GrantLockRequestQueue_(rid)) {
-        // if nobody holds the lock, erase the record
-        if (holders.empty()) {
-          lock_holder_.erase(rid);
-          lock_map_.erase(rid);
-        }
         // notify_all, since some TXN is granted
         lock_table_[rid].cv_.notify_all();
       }
